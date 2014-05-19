@@ -1,7 +1,7 @@
 #OpenLab
 
 ## What
-OpenLab's goal is to provide lab equipment users a fully customizable interface for controlling and collecting data from their equipment (either serial, or analog).
+OpenLab's goal is to provide lab equipment users a fully customizable interface for controlling and collecting data from their equipment.
 
 ## How
 OpenLab's focus is on providing an extensive plugin framework for customizing the software to users' applications. For interfacing with non-serial devices, a microcontroller can be used. OpenLab comes with sample code for interfacing the software with an Arduino.
