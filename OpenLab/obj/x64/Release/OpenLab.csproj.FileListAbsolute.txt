@@ -1,0 +1,10 @@
+C:\cygwin64\home\ngpitt\OpenLab\OpenLab\bin\x64\Release\OpenLab.exe.config
+C:\cygwin64\home\ngpitt\OpenLab\OpenLab\bin\x64\Release\OpenLab.exe
+C:\cygwin64\home\ngpitt\OpenLab\OpenLab\bin\x64\Release\OpenLab.pdb
+C:\cygwin64\home\ngpitt\OpenLab\OpenLab\obj\x64\Release\OpenLab.csprojResolveAssemblyReference.cache
+C:\cygwin64\home\ngpitt\OpenLab\OpenLab\obj\x64\Release\OpenLab.ControlForm.resources
+C:\cygwin64\home\ngpitt\OpenLab\OpenLab\obj\x64\Release\OpenLab.CalibrationForm.resources
+C:\cygwin64\home\ngpitt\OpenLab\OpenLab\obj\x64\Release\OpenLab.Properties.Resources.resources
+C:\cygwin64\home\ngpitt\OpenLab\OpenLab\obj\x64\Release\OpenLab.csproj.GenerateResource.Cache
+C:\cygwin64\home\ngpitt\OpenLab\OpenLab\obj\x64\Release\OpenLab.exe
+C:\cygwin64\home\ngpitt\OpenLab\OpenLab\obj\x64\Release\OpenLab.pdb

@@ -116,7 +116,7 @@ namespace OpenLab
 
             if (form1.samples[(int)Samples.PRESSURE_INPUT].ContainsKey(pressure) || form1.samples[(int)Samples.PRESSURE_INPUT].ContainsValue(numericUpDown5.Value))
             {
-                MessageBox.Show("Sample already exists.", "Fusor Control", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Sample already exists.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
@@ -151,7 +151,7 @@ namespace OpenLab
         {
             if (form1.samples[(int)Samples.VOLTAGE_OUTPUT].ContainsKey(numericUpDown7.Value) || form1.samples[(int)Samples.VOLTAGE_OUTPUT].ContainsValue(numericUpDown6.Value))
             {
-                MessageBox.Show("Sample already exists.", "Fusor Control", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Sample already exists.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
@@ -203,7 +203,7 @@ namespace OpenLab
         {
             if (form1.samples[(int)Samples.VOLTAGE_INPUT].ContainsKey(voltage) || form1.samples[(int)Samples.VOLTAGE_INPUT].ContainsValue(numericUpDown13.Value))
             {
-                MessageBox.Show("Sample already exists.", "Fusor Control", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Sample already exists.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
@@ -225,7 +225,7 @@ namespace OpenLab
         {
             if (form1.samples[(int)Samples.COUNT_INPUT].ContainsKey(count) || form1.samples[(int)Samples.COUNT_INPUT].ContainsValue(numericUpDown14.Value))
             {
-                MessageBox.Show("Sample already exists.", "Fusor Control", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Sample already exists.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
@@ -247,7 +247,7 @@ namespace OpenLab
         {
             if (form1.samples[(int)Samples.CURRENT_INPUT].ContainsKey(current) || form1.samples[(int)Samples.CURRENT_INPUT].ContainsValue(numericUpDown15.Value))
             {
-                MessageBox.Show("Sample already exists.", "Fusor Control", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Sample already exists.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
@@ -303,7 +303,7 @@ namespace OpenLab
                 }
                 catch
                 {
-                    MessageBox.Show("Serial port disconnected.", "Fusor Control", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Serial port disconnected.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     this.BeginInvoke(cleanup_delagate);
                     return;
                 }
@@ -346,7 +346,7 @@ namespace OpenLab
             }
             catch
             {
-                MessageBox.Show("Serial port disconnected.", "Fusor Control", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Serial port disconnected.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 this.Close();
             }
         }

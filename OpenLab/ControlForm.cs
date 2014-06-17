@@ -113,15 +113,6 @@ namespace OpenLab
             splines = Properties.Settings.Default.Splines;
             constants = Properties.Settings.Default.Constants;
 
-            for (int i = 0; i < splines[(int)Splines.VOLTAGE_OUTPUT].Count; i++)
-            {
-                for (int j = 0; j < 5; j++)
-                {
-                    Console.Write(((double[])splines[(int)Splines.VOLTAGE_OUTPUT][i])[j] + " ");
-                }
-                Console.WriteLine();
-            }
-
             if (samples == null)
             {
                 samples = new SortedList[Enum.GetNames(typeof(Samples)).Length];
@@ -166,7 +157,7 @@ namespace OpenLab
         {
             if (run)
             {
-                if (MessageBox.Show("The program is currently running.\nDo you really want to quit?", "Fusor Control", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
+                if (MessageBox.Show("The program is currently running.\nDo you really want to quit?", "OpenLab", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
                 {
                     cleanupForm();
                 }
@@ -194,7 +185,7 @@ namespace OpenLab
                 settingsToolStripMenuItem.ShowDropDown();
                 portToolStripMenuItem.ShowDropDown();
                 portToolStripMenuItem.Select();
-                MessageBox.Show("No serial port selected.", "Fusor Control", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("No serial port selected.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
@@ -203,7 +194,7 @@ namespace OpenLab
                 settingsToolStripMenuItem.ShowDropDown();
                 updateIntervalToolStripMenuItem.ShowDropDown();
                 updateIntervalToolStripMenuItem.Select();
-                MessageBox.Show("No interval selected.", "Fusor Control", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("No interval selected.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
@@ -211,7 +202,7 @@ namespace OpenLab
             {
                 settingsToolStripMenuItem.ShowDropDown();
                 saveLogAsToolStripMenuItem.Select();
-                MessageBox.Show("No log file specified.", "Fusor Control", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("No log file specified.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
@@ -221,7 +212,7 @@ namespace OpenLab
                 {
                     settingsToolStripMenuItem.ShowDropDown();
                     calibrationToolStripMenuItem.Select();
-                    MessageBox.Show("Two calibration samples required per field.", "Fusor Control", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("Two calibration samples required per field.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return;
                 }
             }
@@ -236,13 +227,13 @@ namespace OpenLab
             }
             catch
             {
-                MessageBox.Show("Serial device not found.", "Fusor Control", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Serial device not found.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 
             if (File.Exists(log_file_dialog.FileName))
             {
-                if (MessageBox.Show("The current log file aready exists.\nDo you want to overwrite it?", "Fusor Control", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.No)
+                if (MessageBox.Show("The current log file aready exists.\nDo you want to overwrite it?", "OpenLab", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.No)
                 {
                     if (log_file_dialog.ShowDialog() == DialogResult.Cancel)
                     {
@@ -257,7 +248,7 @@ namespace OpenLab
             }
             catch
             {
-                MessageBox.Show("Error opening log file.", "Fusor Control", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Error opening log file.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 
@@ -355,7 +346,7 @@ namespace OpenLab
                 settingsToolStripMenuItem.ShowDropDown();
                 portToolStripMenuItem.ShowDropDown();
                 portToolStripMenuItem.Select();
-                MessageBox.Show("No serial port selected.", "Fusor Control", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("No serial port selected.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
@@ -364,7 +355,7 @@ namespace OpenLab
                 settingsToolStripMenuItem.ShowDropDown();
                 updateIntervalToolStripMenuItem.ShowDropDown();
                 updateIntervalToolStripMenuItem.Select();
-                MessageBox.Show("No interval selected.", "Fusor Control", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("No interval selected.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
@@ -378,7 +369,7 @@ namespace OpenLab
             }
             catch
             {
-                MessageBox.Show("Serial device not found.", "Fusor Control", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Serial device not found.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 
@@ -491,7 +482,7 @@ namespace OpenLab
                 }
                 catch
                 {
-                    MessageBox.Show("Serial port disconnected.", "Fusor Control", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Serial port disconnected.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     this.BeginInvoke(cleanup_delagate);
                     return;
                 }
@@ -534,7 +525,7 @@ namespace OpenLab
             }
             catch
             {
-                MessageBox.Show("Serial port disconnected.", "Fusor Control", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Serial port disconnected.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 cleanupForm();
             }
         }
