@@ -1,0 +1,92 @@
+<control_form>
+	<parameter>
+		<name>can_change_size<name>
+		<value>false</value>
+	</parameter>
+	<equipment>
+		<name>Turbo Pump</name>
+		<controls>
+			<toggle>
+				<name>Control</name>
+				<commands>
+					<set_on>6 1</set_on>
+					<set_off>6 0</set_off>
+				</commands>
+			</toggle>
+			<indicator>
+				<name>Status</name>
+				<commands>
+					<get>9</get>
+				</commands>
+			</indicator>
+		<controls>
+	</equipment>
+	<equipment>
+		<name>Reactor Pressure</name>
+		<controls>
+			<spinner>
+				<name>mTorr</name>
+				<minimum>0</minimum>
+				<maximum>20</maximum>
+				<commands>
+					<set>3 x</set>
+				</commands>
+			</spinner>
+			<digital_meter>
+				<name>mTorr</name>
+				<commands>
+					<get>11</get>
+				</commands>
+			</digital_meter>
+		</controls>
+	</equipment>
+	<equipment>
+		<name>Power Supply</name>
+		<controls>
+			<toggle>
+				<name>HV</name>
+				<commands>
+					<set_on>7 1</set_on>
+					<set_off>7 0</set_off>
+				</commands>
+			</toggle>
+			<spinner>
+				<name>kV</name>
+				<minimum>0</minimum>
+				<maximum>35</maximum>
+				<commands>
+					<set>8 x</set>
+				</commands>
+			</spinner>
+			<indicator>
+				<name>Status<name>
+				<commands>
+					<get>10</get>
+				</commands>
+			</indicator>
+			<digital_meter>
+				<name>kV</name>
+				<commands>
+					<get>12</get>
+				</commands>
+			</digital_meter>
+			<digital_meter>
+				<name>mA</name>
+				<commands>
+					<get>13</get>
+				</commands>
+			</digital_meter>
+		</controls>
+	</equipment>
+	<equipment>
+		<name>Neutron Scaler</name>
+		<controls>
+			<digital_meter>
+				<name>Count</name>
+				<commands>
+					<get>14</get>
+				</commands>
+			</digital_meter>
+		</controls>
+	</equipment>
+</control_form>
