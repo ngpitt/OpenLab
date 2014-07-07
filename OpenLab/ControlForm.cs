@@ -1,75 +1,36 @@
 ﻿using System;
-using System.Collections;
+using System.Collections.Generic;
 using System.Windows.Forms;
 using System.IO;
 using System.IO.Ports;
 using System.Threading;
 using System.Diagnostics;
+using ControlPlugins;
 
 namespace OpenLab
 {
-    enum Commands
-    {
-        SET_REGULATOR_SETPOINT = 1,
-        SET_REGULATOR_TUNINGS,
-        SET_PRESSURE_SETPOINT,
-        SET_PRESSURE_TUNINGS,
-        SET_PRESSURE_LIMITS,
-        SET_PUMP_OUTPUT,
-        SET_HV_OUTPUT,
-        SET_VOLTAGE_OUTPUT,
-        GET_PUMP_INPUT,
-        GET_HV_INPUT,
-        GET_PRESSURE_INPUT,
-        GET_VOLTAGE_INPUT,
-        GET_CURRENT_INPUT,
-        GET_COUNT_INPUT,
-    }
-
-    enum Samples
-    {
-        PRESSURE_INPUT,
-        VOLTAGE_INPUT,
-        VOLTAGE_OUTPUT,
-        COUNT_INPUT,
-        CURRENT_INPUT,
-    }
-
-    enum Splines
-    {
-        PRESSURE_INPUT,
-        PRESSURE_OUTPUT,
-        VOLTAGE_OUTPUT,
-        VOLTAGE_INPUT,
-        COUNT_INPUT,
-        CURRENT_INPUT,
-    }
-
-    enum Constants
-    {
-        REGULATOR_SETPOINT,
-        REGULATOR_KP,
-        REGULATOR_KI,
-        REGULATOR_KD,
-        PRESSURE_MIN,
-        PRESSURE_MAX,
-        PRESSURE_KP,
-        PRESSURE_KI,
-        PRESSURE_KD,
-    }
-
     public partial class ControlForm : Form
     {
+        public Dictionary<string, ControlPlugin> plugins;
         public string port_name;
         public int update_interval;
         public SerialPort serial_port;
-        public SortedList[] samples;
-        public ArrayList[] splines;
+        public SortedList<double, double>[] samples;
+        public List<double[]>[] splines;
         public double[] constants;
 
         public ControlForm()
         {
             InitializeComponent();
+
+            Dictionary<string, ControlPlugin> plugins = new Dictionary<string, ControlPlugin>();
+            ICollection<ControlPlugin> plugin_collection = GenericPluginLoader<ControlPlugin>.LoadPlugins("Plugins");
+
+            foreach (var item in plugin_collection)
+            {
+                plugins.Add(item.Name, item);
+
+            }
 
             this.Shown += new EventHandler(controlFormShown);
             this.FormClosing += new FormClosingEventHandler(controlFormClose);
@@ -106,38 +67,6 @@ namespace OpenLab
             log_file_dialog.Filter = "CSV (*.csv)|*.csv";
             log_file_dialog.DefaultExt = "csv";
 
-            port_name = Properties.Settings.Default.PortName;
-            update_interval = Properties.Settings.Default.UpdateInterval;
-            log_file_dialog.FileName = Properties.Settings.Default.LogFileName;
-            samples = Properties.Settings.Default.Samples;
-            splines = Properties.Settings.Default.Splines;
-            constants = Properties.Settings.Default.Constants;
-
-            if (samples == null)
-            {
-                samples = new SortedList[Enum.GetNames(typeof(Samples)).Length];
-
-                for (int i = 0; i < Enum.GetNames(typeof(Samples)).Length; i++)
-                {
-                    samples[i] = new SortedList();
-                }
-            }
-
-            if (splines == null)
-            {
-                splines = new ArrayList[Enum.GetNames(typeof(Splines)).Length];
-
-                for (int i = 0; i < Enum.GetNames(typeof(Splines)).Length; i++)
-                {
-                    splines[i] = new ArrayList();
-                }
-            }
-
-            if (constants == null)
-            {
-                constants = new double[Enum.GetNames(typeof(Constants)).Length];
-            }
-
             foreach (ToolStripMenuItem item in updateIntervalToolStripMenuItem.DropDownItems)
             {
                 item.Click += new EventHandler(updateIntervalToolStripMenuItem_Click);
@@ -167,15 +96,6 @@ namespace OpenLab
                     return;
                 }
             }
-
-            Properties.Settings.Default.PortName = port_name;
-            Properties.Settings.Default.UpdateInterval = update_interval;
-            Properties.Settings.Default.LogFileName = log_file_dialog.FileName;
-            Properties.Settings.Default.Samples = samples;
-            Properties.Settings.Default.Splines = splines;
-            Properties.Settings.Default.Constants = constants;
-
-            Properties.Settings.Default.Save();
         }
 
         private void connectToolStripMenuItem_Click(object sender, EventArgs e)
@@ -530,7 +450,7 @@ namespace OpenLab
             }
         }
 
-        private int calculateValue(int input, ArrayList spline)
+        private int calculateValue(int input, List<double[]> spline)
         {
             int spline_index, output = 0;
 

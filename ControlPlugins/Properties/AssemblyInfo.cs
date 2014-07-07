@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("OpenLab")]
+[assembly: AssemblyTitle("ControlPlugins")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Xphysics")]
-[assembly: AssemblyProduct("OpenLab")]
+[assembly: AssemblyProduct("ControlPlugins")]
 [assembly: AssemblyCopyright("Copyright ©  2014")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("5980f903-5133-41fb-b6f8-898c5221337d")]
+[assembly: Guid("7d30f2cf-c2ed-4c45-a433-a1d6c509af7b")]
 
 // Version information for an assembly consists of the following four values:
 //

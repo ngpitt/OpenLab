@@ -1,7 +1,7 @@
 #OpenLab
 
 ## Goal
-OpenLab's goal is to provide lab equipment users with a fully customizable interface for controlling and collecting data from their equipment. Since the software must be able to work in varying setups and environments, OpenLab's focus will be on providing an extensive plugin framework for customizing the software to users' applications (the hope being to spark a collection of community created plugins). OpenLab will also provide sample code for interfacing the software with an Arduino. OpenLab will be written in C#.
+OpenLab's goal is to provide lab equipment users a fully customizable interface for controlling and collecting data from their equipment. Since the software must be able to work in varying setups and environments, OpenLab will focus is on providing an extensive plugin framework for customizing the software to users' applications (the hope being to spark a collection of community created plugins). OpenLab will also provide sample code for interfacing the software with an Arduino. OpenLab will be written in C#.
 
 ## Features
 * Program to create a form from configuration/plugin files
