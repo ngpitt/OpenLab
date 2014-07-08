@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenLab", "OpenLab\OpenLab.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ControlPlugins", "ControlPlugins\ControlPlugins.csproj", "{30C92801-FE81-41F9-848C-22BCFA7EE09F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DigitalMeter", "DigitalMeter\DigitalMeter.csproj", "{B3952F6A-12DD-432E-9D8E-69A579CDE528}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{30C92801-FE81-41F9-848C-22BCFA7EE09F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{30C92801-FE81-41F9-848C-22BCFA7EE09F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{30C92801-FE81-41F9-848C-22BCFA7EE09F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B3952F6A-12DD-432E-9D8E-69A579CDE528}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B3952F6A-12DD-432E-9D8E-69A579CDE528}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B3952F6A-12DD-432E-9D8E-69A579CDE528}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B3952F6A-12DD-432E-9D8E-69A579CDE528}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

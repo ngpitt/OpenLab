@@ -11,25 +11,25 @@ namespace OpenLab
 {
     public partial class ControlForm : Form
     {
-        public Dictionary<string, ControlPlugin> plugins;
+        public Dictionary<string, IControl> controls;
         public string port_name;
-        public int update_interval;
+        public uint baud_rate;
+        public ushort update_interval;
         public SerialPort serial_port;
-        public SortedList<double, double>[] samples;
-        public List<double[]>[] splines;
-        public double[] constants;
 
         public ControlForm()
         {
             InitializeComponent();
 
-            Dictionary<string, ControlPlugin> plugins = new Dictionary<string, ControlPlugin>();
-            ICollection<ControlPlugin> plugin_collection = GenericPluginLoader<ControlPlugin>.LoadPlugins("Plugins");
+            Dictionary<string, IControl> controls = new Dictionary<string, IControl>();
+            ICollection<IControl> control_collection = GenericPluginLoader<IControl>.LoadPlugins("Plugins");
 
-            foreach (var item in plugin_collection)
+            if (control_collection != null)
             {
-                plugins.Add(item.Name, item);
-
+                foreach (var item in control_collection)
+                {
+                    controls.Add(item.name, item);
+                }
             }
 
             this.Shown += new EventHandler(controlFormShown);
@@ -118,25 +118,6 @@ namespace OpenLab
                 return;
             }
 
-            if (log_file_dialog.FileName == "")
-            {
-                settingsToolStripMenuItem.ShowDropDown();
-                saveLogAsToolStripMenuItem.Select();
-                MessageBox.Show("No log file specified.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                return;
-            }
-
-            for (int i = 0; i < Enum.GetNames(typeof(Samples)).Length; i++)
-            {
-                if (samples[i].Count < 2)
-                {
-                    settingsToolStripMenuItem.ShowDropDown();
-                    calibrationToolStripMenuItem.Select();
-                    MessageBox.Show("Two calibration samples required per field.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    return;
-                }
-            }
-
             serial_port = new SerialPort(port_name, 115200);
             serial_port.ReadTimeout = 1000;
             serial_port.WriteTimeout = 1000;
@@ -175,11 +156,6 @@ namespace OpenLab
             setControls(true);
             setMenu(false);
 
-            serialWrite((int)Commands.SET_REGULATOR_SETPOINT + " " + constants[(int)Constants.REGULATOR_SETPOINT]);
-            serialWrite((int)Commands.SET_REGULATOR_TUNINGS + " " + constants[(int)Constants.REGULATOR_KP] + " " + constants[(int)Constants.REGULATOR_KI] + " " + constants[(int)Constants.REGULATOR_KD]);
-            serialWrite((int)Commands.SET_PRESSURE_TUNINGS + " " + constants[(int)Constants.PRESSURE_KP] + " " + constants[(int)Constants.PRESSURE_KI] + " " + constants[(int)Constants.PRESSURE_KD]);
-            serialWrite((int)Commands.SET_PRESSURE_LIMITS + " " + constants[(int)Constants.PRESSURE_MIN] + " " + constants[(int)Constants.PRESSURE_MAX]);
-
             update_thread = new Thread(updateThread);
             update_thread.Start();
         }
@@ -212,7 +188,7 @@ namespace OpenLab
         {
             ToolStripMenuItem interval = (ToolStripMenuItem)sender;
 
-            update_interval = Convert.ToInt32(interval.Tag);
+            update_interval = Convert.ToUInt16(interval.Tag);
 
             foreach (ToolStripMenuItem item in updateIntervalToolStripMenuItem.DropDownItems)
             {
@@ -220,83 +196,6 @@ namespace OpenLab
             }
 
             interval.Checked = true;
-        }
-
-        private void saveLogAsToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            log_file_dialog.ShowDialog();
-        }
-
-        private void button1_Click(object sender, EventArgs e)
-        {
-            serialWrite((int)Commands.SET_PUMP_OUTPUT + " 1");
-        }
-
-        private void button2_Click(object sender, EventArgs e)
-        {
-            serialWrite((int)Commands.SET_PUMP_OUTPUT + " 0");
-        }
-
-        private void numericUpDown1_ValueChanged(object sender, EventArgs e)
-        {
-            serialWrite((int)Commands.SET_PRESSURE_SETPOINT + " " + calculateValue((int)numericUpDown1.Value, splines[(int)Splines.PRESSURE_OUTPUT]));
-        }
-
-        private void button3_Click(object sender, EventArgs e)
-        {
-            serialWrite((int)Commands.SET_HV_OUTPUT + " 1");
-        }
-
-        private void button4_Click(object sender, EventArgs e)
-        {
-            serialWrite((int)Commands.SET_HV_OUTPUT + " 0");
-        }
-
-        private void numericUpDown2_ValueChanged(object sender, EventArgs e)
-        {
-            serialWrite((int)Commands.SET_VOLTAGE_OUTPUT + " " + calculateValue((int)numericUpDown2.Value, splines[(int)Splines.VOLTAGE_OUTPUT]));
-        }
-
-        private void calibrationToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            CalibrationForm form2 = new CalibrationForm(this);
-
-            if (port_name == null)
-            {
-                settingsToolStripMenuItem.ShowDropDown();
-                portToolStripMenuItem.ShowDropDown();
-                portToolStripMenuItem.Select();
-                MessageBox.Show("No serial port selected.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                return;
-            }
-
-            if (update_interval == 0)
-            {
-                settingsToolStripMenuItem.ShowDropDown();
-                updateIntervalToolStripMenuItem.ShowDropDown();
-                updateIntervalToolStripMenuItem.Select();
-                MessageBox.Show("No interval selected.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                return;
-            }
-
-            serial_port = new SerialPort(port_name, 115200);
-            serial_port.ReadTimeout = 1000;
-            serial_port.WriteTimeout = 1000;
-
-            try
-            {
-                serial_port.Open();
-            }
-            catch
-            {
-                MessageBox.Show("Serial device not found.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
-
-            setMenu(false);
-            serialToolStripMenuItem.Enabled = false;
-            disconnectToolStripMenuItem.Enabled = false;
-            form2.Show();
         }
 
         private void refreshPorts(bool value)
@@ -364,13 +263,11 @@ namespace OpenLab
 
         private void updateThread()
         {
-            bool pump, hv;
-            int pressure, voltage, current, count, sleep;
+            ushort sleep;
             ulong time = 0;
             Stopwatch stopwatch = new Stopwatch();
 
             run = true;
-            log_file.WriteLine("Time (ms),Pressure (mTorr),Voltage (kV),Current (mA),Neutron Count");
 
             while (run)
             {
@@ -378,27 +275,10 @@ namespace OpenLab
 
                 try
                 {
-                    serial_port.WriteLine(Convert.ToString((int)Commands.GET_PUMP_INPUT));
-                    pump = serial_port.ReadLine().Substring(0, 1) == "1";
 
-                    serial_port.WriteLine(Convert.ToString((int)Commands.GET_PRESSURE_INPUT));
-                    pressure = calculateValue(Convert.ToInt32(serial_port.ReadLine()), splines[(int)Splines.PRESSURE_INPUT]);
+                    //this.BeginInvoke(update_delagate, ...);
 
-                    serial_port.WriteLine(Convert.ToString((int)Commands.GET_HV_INPUT));
-                    hv = serial_port.ReadLine().Substring(0, 1) == "1";
-
-                    serial_port.WriteLine(Convert.ToString((int)Commands.GET_VOLTAGE_INPUT));
-                    voltage = calculateValue(Convert.ToInt32(serial_port.ReadLine()), splines[(int)Splines.VOLTAGE_INPUT]);
-
-                    serial_port.WriteLine(Convert.ToString((int)Commands.GET_CURRENT_INPUT));
-                    current = calculateValue(Convert.ToInt32(serial_port.ReadLine()), splines[(int)Splines.CURRENT_INPUT]);
-
-                    serial_port.WriteLine(Convert.ToString((int)Commands.GET_COUNT_INPUT));
-                    count = calculateValue(Convert.ToInt32(serial_port.ReadLine()), splines[(int)Splines.COUNT_INPUT]);
-
-                    this.BeginInvoke(update_delagate, pump, pressure, hv, voltage, current, count);
-
-                    log_file.WriteLine(time + "," + pressure + "," + voltage + "," + current + "," + count);
+                    //log_file.WriteLine(...);
                 }
                 catch
                 {
@@ -408,7 +288,7 @@ namespace OpenLab
                 }
 
                 time += (ulong)update_interval;
-                sleep = (int)(update_interval - stopwatch.ElapsedMilliseconds);
+                sleep = (ushort)(update_interval - stopwatch.ElapsedMilliseconds);
 
                 if (sleep > 0)
                 {
@@ -419,12 +299,9 @@ namespace OpenLab
 
         private void updateForm(bool pump, int pressure, bool hv, int voltage, int current, int count)
         {
-            label2.Text = "Status: " + (pump ? "Normal" : "Accelerating/Stopped");
-            label4.Text = "mTorr: " + pressure;
-            label7.Text = "HV: " + (hv ? "On" : "Off");
-            label8.Text = "kV: " + voltage;
-            label9.Text = "mA: " + current;
-            label10.Text = "Count: " + count;
+
+            // Update indicators and meters
+
         }
 
         private void cleanupForm()
@@ -432,7 +309,6 @@ namespace OpenLab
             run = false;
             update_thread.Join();
             serial_port.Dispose();
-            log_file.Dispose();
             setControls(false);
             setMenu(true);
         }
@@ -448,31 +324,6 @@ namespace OpenLab
                 MessageBox.Show("Serial port disconnected.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 cleanupForm();
             }
-        }
-
-        private int calculateValue(int input, List<double[]> spline)
-        {
-            int spline_index, output = 0;
-
-            for (spline_index = 0; spline_index < spline.Count; spline_index++)
-            {
-                if (input <= ((double[])spline[spline_index])[4])
-                {
-                    break;
-                }
-            }
-
-            if (spline_index == spline.Count)
-            {
-                spline_index--;
-            }
-
-            for (int i = 0; i < 4; i++)
-            {
-                output += (int)Math.Round(((double[])spline[spline_index])[i] * Math.Pow(input - ((double[])spline[spline_index])[4], i));
-            }
-
-            return output;
         }
     }
 }
