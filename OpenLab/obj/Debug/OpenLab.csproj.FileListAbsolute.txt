@@ -10,3 +10,6 @@ C:\cygwin64\home\ngpitt\OpenLab\OpenLab\bin\Debug\ControlPlugins.pdb
 C:\cygwin64\home\ngpitt\OpenLab\OpenLab\obj\Debug\OpenLab.exe
 C:\cygwin64\home\ngpitt\OpenLab\OpenLab\obj\Debug\OpenLab.pdb
 C:\cygwin64\home\ngpitt\OpenLab\OpenLab\bin\Debug\Plugins\DigitalMeter.dll
+C:\cygwin64\home\ngpitt\OpenLab\OpenLab\bin\Debug\Plugins\Indicator.dll
+C:\cygwin64\home\ngpitt\OpenLab\OpenLab\bin\Debug\Plugins\Spinner.dll
+C:\cygwin64\home\ngpitt\OpenLab\OpenLab\bin\Debug\Plugins\Toggle.dll

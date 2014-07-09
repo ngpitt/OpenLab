@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
+using System.Xml;
 using System.IO;
 using System.IO.Ports;
 using System.Threading;
@@ -11,17 +12,12 @@ namespace OpenLab
 {
     public partial class ControlForm : Form
     {
-        public Dictionary<string, IControl> controls;
-        public string port_name;
-        public uint baud_rate;
-        public ushort update_interval;
-        public SerialPort serial_port;
 
         public ControlForm()
         {
             InitializeComponent();
 
-            Dictionary<string, IControl> controls = new Dictionary<string, IControl>();
+            controls = new Dictionary<string, IControl>();
             ICollection<IControl> control_collection = GenericPluginLoader<IControl>.LoadPlugins("Plugins");
 
             if (control_collection != null)
@@ -32,55 +28,34 @@ namespace OpenLab
                 }
             }
 
-            this.Shown += new EventHandler(controlFormShown);
             this.FormClosing += new FormClosingEventHandler(controlFormClose);
             this.FormBorderStyle = FormBorderStyle.FixedSingle;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
 
+            load_file_dialog = new OpenFileDialog();
+            config = new XmlDocument();
+
             update_delagate = new UpdateDelagate(updateForm);
             cleanup_delagate = new CleanupDelagate(cleanupForm);
-            log_file_dialog = new SaveFileDialog();
         }
 
-        public void setMenu(bool value)
-        {
-            foreach (ToolStripMenuItem item in menuStrip1.Items)
-            {
-                recurseMenu(value, item);
-            }
-            serialToolStripMenuItem.Enabled = true;
-            disconnectToolStripMenuItem.Enabled = !value;
-        }
-
+        private Dictionary<string, IControl> controls;
+        private List<System.Windows.Forms.Label> labels;
+        private List<System.Windows.Forms.Button> buttons;
+        private OpenFileDialog load_file_dialog;
+        private XmlDocument config;
+        private string port_name;
+        private int baud_rate, data_bits, update_interval, read_timeout, write_timeout;
+        private Parity parity;
+        private StopBits stop_bits;
+        private SafeSerialPort serial_port;
         private bool run = false;
-        private SaveFileDialog log_file_dialog;
-        private StreamWriter log_file;
         private Thread update_thread;
         private delegate void UpdateDelagate(bool pump, int pressure, bool hv, int voltage, int current, int count);
         private delegate void CleanupDelagate();
         private UpdateDelagate update_delagate;
         private CleanupDelagate cleanup_delagate;
-
-        private void controlFormShown(object sender, EventArgs e)
-        {
-            log_file_dialog.Filter = "CSV (*.csv)|*.csv";
-            log_file_dialog.DefaultExt = "csv";
-
-            foreach (ToolStripMenuItem item in updateIntervalToolStripMenuItem.DropDownItems)
-            {
-                item.Click += new EventHandler(updateIntervalToolStripMenuItem_Click);
-
-                if (Convert.ToInt32(item.Tag) == update_interval)
-                {
-                    item.Checked = true;
-                }
-            }
-
-            refreshPorts(false);
-            setControls(false);
-            setMenu(true);
-        }
 
         private void controlFormClose(object sender, FormClosingEventArgs e)
         {
@@ -98,29 +73,26 @@ namespace OpenLab
             }
         }
 
+        private void loadToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+
+            load_file_dialog.Filter = "OpenLab Config (*.olc)|*.olc";
+
+            if (load_file_dialog.ShowDialog() == DialogResult.Cancel)
+            {
+                return;
+            }
+
+            config.Load(load_file_dialog.FileName);
+
+            string xmlcontents = config.InnerXml;
+        }
+
         private void connectToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (port_name == null)
-            {
-                settingsToolStripMenuItem.ShowDropDown();
-                portToolStripMenuItem.ShowDropDown();
-                portToolStripMenuItem.Select();
-                MessageBox.Show("No serial port selected.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                return;
-            }
-
-            if (update_interval == 0)
-            {
-                settingsToolStripMenuItem.ShowDropDown();
-                updateIntervalToolStripMenuItem.ShowDropDown();
-                updateIntervalToolStripMenuItem.Select();
-                MessageBox.Show("No interval selected.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                return;
-            }
-
-            serial_port = new SerialPort(port_name, 115200);
-            serial_port.ReadTimeout = 1000;
-            serial_port.WriteTimeout = 1000;
+            serial_port = new SafeSerialPort(port_name, baud_rate, parity, data_bits, stop_bits);
+            serial_port.ReadTimeout = read_timeout;
+            serial_port.WriteTimeout = write_timeout;
 
             try
             {
@@ -128,33 +100,9 @@ namespace OpenLab
             }
             catch
             {
-                MessageBox.Show("Serial device not found.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Unable to open serial device.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
-
-            if (File.Exists(log_file_dialog.FileName))
-            {
-                if (MessageBox.Show("The current log file aready exists.\nDo you want to overwrite it?", "OpenLab", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.No)
-                {
-                    if (log_file_dialog.ShowDialog() == DialogResult.Cancel)
-                    {
-                        return;
-                    }
-                }
-            }
-
-            try
-            {
-                log_file = new StreamWriter(log_file_dialog.FileName);
-            }
-            catch
-            {
-                MessageBox.Show("Error opening log file.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
-
-            setControls(true);
-            setMenu(false);
 
             update_thread = new Thread(updateThread);
             update_thread.Start();
@@ -165,105 +113,102 @@ namespace OpenLab
             cleanupForm();
         }
 
-        private void refreshToolStripMenuItem_Click(object sender, EventArgs e)
+        private void portNameToolStripMenuItem_MouseHover(object sender, EventArgs e)
         {
-            refreshPorts(true);
-        }
+            string[] ports = SafeSerialPort.GetPortNames();
 
-        private void portToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            ToolStripMenuItem port = (ToolStripMenuItem)sender;
+            portNameToolStripComboBox.Items.Clear();
 
-            port_name = port.Tag.ToString();
-
-            foreach (ToolStripMenuItem item in portToolStripMenuItem.DropDownItems)
+            foreach (string port in ports)
             {
-                item.Checked = false;
-            }
-
-            port.Checked = true;
-        }
-
-        private void updateIntervalToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            ToolStripMenuItem interval = (ToolStripMenuItem)sender;
-
-            update_interval = Convert.ToUInt16(interval.Tag);
-
-            foreach (ToolStripMenuItem item in updateIntervalToolStripMenuItem.DropDownItems)
-            {
-                item.Checked = false;
-            }
-
-            interval.Checked = true;
-        }
-
-        private void refreshPorts(bool value)
-        {
-            bool found = false;
-            string[] ports = SerialPort.GetPortNames();
-            ToolStripMenuItem[] items = new ToolStripMenuItem[ports.Length + 1];
-
-            items[0] = new ToolStripMenuItem();
-            items[0].Name = "refreshToolStripMenuItem";
-            items[0].Text = "Refresh";
-            items[0].ShortcutKeys = Keys.Control | Keys.R;
-            items[0].Click += new EventHandler(refreshToolStripMenuItem_Click);
-
-            for (int i = 1; i < items.Length; i++)
-            {
-                items[i] = new ToolStripMenuItem();
-                items[i].Name = "portToolStripMenuItem" + i;
-                items[i].Text = ports[i - 1];
-                items[i].Tag = ports[i - 1];
-                items[i].Click += new EventHandler(portToolStripMenuItem_Click);
-
-                if (ports[i - 1] == port_name)
-                {
-                    items[i].Checked = true;
-                    found = true;
-                }
-            }
-
-            if (!found)
-            {
-                port_name = null;
-            }
-
-            portToolStripMenuItem.DropDownItems.Clear();
-            portToolStripMenuItem.DropDownItems.AddRange(items);
-
-            if (value)
-            {
-                settingsToolStripMenuItem.ShowDropDown();
-                portToolStripMenuItem.ShowDropDown();
+                portNameToolStripComboBox.Items.Add(port);
             }
         }
 
-        private void setControls(bool value)
+        private void portNameToolStripComboBox_SelectedIndexChanged(object sender, EventArgs e)
         {
-            foreach (Control control in this.Controls)
-            {
-                control.Enabled = value;
-            }
-            menuStrip1.Enabled = true;
+            port_name = portNameToolStripComboBox.Text;
         }
 
-        private void recurseMenu(bool value, ToolStripMenuItem item)
+        private void baudRateToolStripTextBox_TextChanged(object sender, EventArgs e)
         {
-            if (item.DropDownItems.Count > 0)
+            baud_rate = Convert.ToInt32(baudRateToolStripTextBox.Text);
+        }
+
+        private void parityToolStripComboBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            switch (parityToolStripComboBox.SelectedIndex)
             {
-                foreach (ToolStripMenuItem child_item in item.DropDownItems)
-                {
-                    recurseMenu(value, child_item);
-                }
+                case 0:
+                    parity = Parity.Even;
+                    break;
+                case 1:
+                    parity = Parity.Mark;
+                    break;
+                case 2:
+                    parity = Parity.None;
+                    break;
+                case 3:
+                    parity = Parity.Odd;
+                    break;
+                case 4:
+                    parity = Parity.Space;
+                    break;
             }
-            item.Enabled = value;
+        }
+
+        private void dataBitsToolStripTextBox_TextChanged(object sender, EventArgs e)
+        {
+            data_bits = Convert.ToInt32(dataBitsToolStripTextBox.Text);
+        }
+
+        private void stopBitsToolStripComboBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            switch (stopBitsToolStripComboBox.SelectedIndex)
+            {
+                case 0:
+                    stop_bits = StopBits.One;
+                    break;
+                case 1:
+                    stop_bits = StopBits.OnePointFive;
+                    break;
+                case 2:
+                    stop_bits = StopBits.Two;
+                    break;
+            }
+        }
+
+        private void readTimeoutToolStripTextBox_TextChanged(object sender, EventArgs e)
+        {
+            read_timeout = Convert.ToInt32(readTimeoutToolStripTextBox.Text);
+        }
+
+        private void writeTimeoutToolStripTextBox_TextChanged(object sender, EventArgs e)
+        {
+            write_timeout = Convert.ToInt32(writeTimeoutToolStripTextBox.Text);
+        }
+
+        private void updateIntervalToolStripMenuItem_TextChanged(object sender, EventArgs e)
+        {
+            update_interval = Convert.ToInt32(updateIntervalToolStripTextBox.Text);
+        }
+
+        private void aboutToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            string message = "OpenLab - Open Source Lab Equipment Control Software\n\n";
+
+            message += "Control Plugins:\n";
+            foreach (string plugin in controls.Keys)
+            {
+                message += "    " + plugin + "\n";
+            }
+
+            MessageBox.Show(message, "OpenLab");
         }
 
         private void updateThread()
         {
-            ushort sleep;
+            long sleep;
             ulong time = 0;
             Stopwatch stopwatch = new Stopwatch();
 
@@ -278,7 +223,6 @@ namespace OpenLab
 
                     //this.BeginInvoke(update_delagate, ...);
 
-                    //log_file.WriteLine(...);
                 }
                 catch
                 {
@@ -288,11 +232,11 @@ namespace OpenLab
                 }
 
                 time += (ulong)update_interval;
-                sleep = (ushort)(update_interval - stopwatch.ElapsedMilliseconds);
+                sleep = update_interval - stopwatch.ElapsedMilliseconds;
 
                 if (sleep > 0)
                 {
-                    Thread.Sleep(sleep);
+                    Thread.Sleep((int)sleep);
                 }
             }
         }
@@ -309,8 +253,6 @@ namespace OpenLab
             run = false;
             update_thread.Join();
             serial_port.Dispose();
-            setControls(false);
-            setMenu(true);
         }
 
         private void serialWrite(string message)
@@ -323,6 +265,57 @@ namespace OpenLab
             {
                 MessageBox.Show("Serial port disconnected.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 cleanupForm();
+            }
+        }
+
+        private class SafeSerialPort : SerialPort
+        {
+            private Stream theBaseStream;
+
+            public SafeSerialPort(string port_name, int baud_rate, Parity parity, int data_bits, StopBits stop_bits)
+                : base(port_name, baud_rate, parity, data_bits, stop_bits)
+            {
+
+            }
+
+            public new void Open()
+            {
+                try
+                {
+                    base.Open();
+                    theBaseStream = BaseStream;
+                    GC.SuppressFinalize(BaseStream);
+                }
+                catch
+                {
+
+                }
+            }
+
+            public new void Dispose()
+            {
+                Dispose(true);
+            }
+
+            protected override void Dispose(bool disposing)
+            {
+                if (disposing && (base.Container != null))
+                {
+                    base.Container.Dispose();
+                }
+                try
+                {
+                    if (theBaseStream.CanRead)
+                    {
+                        theBaseStream.Close();
+                        GC.ReRegisterForFinalize(theBaseStream);
+                    }
+                }
+                catch
+                {
+                    // ignore exception - bug with USB - serial adapters.
+                }
+                base.Dispose(disposing);
             }
         }
     }

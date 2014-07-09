@@ -34,21 +34,36 @@
             this.connectToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.disconnectToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.portToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.portNameToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.portNameToolStripComboBox = new System.Windows.Forms.ToolStripComboBox();
+            this.baudRateToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.baudRateToolStripTextBox = new System.Windows.Forms.ToolStripTextBox();
+            this.parityToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.parityToolStripComboBox = new System.Windows.Forms.ToolStripComboBox();
+            this.dataBitsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.dataBitsToolStripTextBox = new System.Windows.Forms.ToolStripTextBox();
+            this.stopBitsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.stopBitsToolStripComboBox = new System.Windows.Forms.ToolStripComboBox();
+            this.readTimeoutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.readTimeoutToolStripTextBox = new System.Windows.Forms.ToolStripTextBox();
+            this.writeTimeoutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.writeTimeoutToolStripTextBox = new System.Windows.Forms.ToolStripTextBox();
             this.updateIntervalToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.updateIntervalToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
-            this.updateIntervalToolStripMenuItem2 = new System.Windows.Forms.ToolStripMenuItem();
-            this.updateIntervalToolStripMenuItem3 = new System.Windows.Forms.ToolStripMenuItem();
-            this.updateIntervalToolStripMenuItem4 = new System.Windows.Forms.ToolStripMenuItem();
-            this.updateIntervalToolStripMenuItem5 = new System.Windows.Forms.ToolStripMenuItem();
+            this.updateIntervalToolStripTextBox = new System.Windows.Forms.ToolStripTextBox();
+            this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.loadToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.editToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.saveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
             // menuStrip1
             // 
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.fileToolStripMenuItem,
             this.serialToolStripMenuItem,
-            this.settingsToolStripMenuItem});
+            this.aboutToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
             this.menuStrip1.Size = new System.Drawing.Size(442, 24);
@@ -58,7 +73,8 @@
             // 
             this.serialToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.connectToolStripMenuItem,
-            this.disconnectToolStripMenuItem});
+            this.disconnectToolStripMenuItem,
+            this.settingsToolStripMenuItem});
             this.serialToolStripMenuItem.Name = "serialToolStripMenuItem";
             this.serialToolStripMenuItem.Size = new System.Drawing.Size(47, 20);
             this.serialToolStripMenuItem.Text = "Serial";
@@ -82,69 +98,181 @@
             // settingsToolStripMenuItem
             // 
             this.settingsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.portToolStripMenuItem,
+            this.portNameToolStripMenuItem,
+            this.baudRateToolStripMenuItem,
+            this.parityToolStripMenuItem,
+            this.dataBitsToolStripMenuItem,
+            this.stopBitsToolStripMenuItem,
+            this.readTimeoutToolStripMenuItem,
+            this.writeTimeoutToolStripMenuItem,
             this.updateIntervalToolStripMenuItem});
             this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
-            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(61, 20);
+            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(175, 22);
             this.settingsToolStripMenuItem.Text = "Settings";
             // 
-            // portToolStripMenuItem
+            // portNameToolStripMenuItem
             // 
-            this.portToolStripMenuItem.Name = "portToolStripMenuItem";
-            this.portToolStripMenuItem.Size = new System.Drawing.Size(154, 22);
-            this.portToolStripMenuItem.Text = "Port";
+            this.portNameToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.portNameToolStripComboBox});
+            this.portNameToolStripMenuItem.Name = "portNameToolStripMenuItem";
+            this.portNameToolStripMenuItem.Size = new System.Drawing.Size(181, 22);
+            this.portNameToolStripMenuItem.Text = "Port Name";
+            this.portNameToolStripMenuItem.MouseHover += new System.EventHandler(this.portNameToolStripMenuItem_MouseHover);
+            // 
+            // portNameToolStripComboBox
+            // 
+            this.portNameToolStripComboBox.Name = "portNameToolStripComboBox";
+            this.portNameToolStripComboBox.Size = new System.Drawing.Size(121, 23);
+            this.portNameToolStripComboBox.SelectedIndexChanged += new System.EventHandler(this.portNameToolStripComboBox_SelectedIndexChanged);
+            // 
+            // baudRateToolStripMenuItem
+            // 
+            this.baudRateToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.baudRateToolStripTextBox});
+            this.baudRateToolStripMenuItem.Name = "baudRateToolStripMenuItem";
+            this.baudRateToolStripMenuItem.Size = new System.Drawing.Size(181, 22);
+            this.baudRateToolStripMenuItem.Text = "Baud Rate";
+            // 
+            // baudRateToolStripTextBox
+            // 
+            this.baudRateToolStripTextBox.MaxLength = 10;
+            this.baudRateToolStripTextBox.Name = "baudRateToolStripTextBox";
+            this.baudRateToolStripTextBox.Size = new System.Drawing.Size(100, 23);
+            this.baudRateToolStripTextBox.TextChanged += new System.EventHandler(this.baudRateToolStripTextBox_TextChanged);
+            // 
+            // parityToolStripMenuItem
+            // 
+            this.parityToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.parityToolStripComboBox});
+            this.parityToolStripMenuItem.Name = "parityToolStripMenuItem";
+            this.parityToolStripMenuItem.Size = new System.Drawing.Size(181, 22);
+            this.parityToolStripMenuItem.Text = "Parity";
+            // 
+            // parityToolStripComboBox
+            // 
+            this.parityToolStripComboBox.Items.AddRange(new object[] {
+            "Even",
+            "Mark",
+            "None",
+            "Odd",
+            "Space"});
+            this.parityToolStripComboBox.Name = "parityToolStripComboBox";
+            this.parityToolStripComboBox.Size = new System.Drawing.Size(121, 23);
+            this.parityToolStripComboBox.SelectedIndexChanged += new System.EventHandler(this.parityToolStripComboBox_SelectedIndexChanged);
+            // 
+            // dataBitsToolStripMenuItem
+            // 
+            this.dataBitsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.dataBitsToolStripTextBox});
+            this.dataBitsToolStripMenuItem.Name = "dataBitsToolStripMenuItem";
+            this.dataBitsToolStripMenuItem.Size = new System.Drawing.Size(181, 22);
+            this.dataBitsToolStripMenuItem.Text = "Data Bits";
+            // 
+            // dataBitsToolStripTextBox
+            // 
+            this.dataBitsToolStripTextBox.MaxLength = 10;
+            this.dataBitsToolStripTextBox.Name = "dataBitsToolStripTextBox";
+            this.dataBitsToolStripTextBox.Size = new System.Drawing.Size(100, 23);
+            this.dataBitsToolStripTextBox.TextChanged += new System.EventHandler(this.dataBitsToolStripTextBox_TextChanged);
+            // 
+            // stopBitsToolStripMenuItem
+            // 
+            this.stopBitsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.stopBitsToolStripComboBox});
+            this.stopBitsToolStripMenuItem.Name = "stopBitsToolStripMenuItem";
+            this.stopBitsToolStripMenuItem.Size = new System.Drawing.Size(181, 22);
+            this.stopBitsToolStripMenuItem.Text = "Stop Bits";
+            // 
+            // stopBitsToolStripComboBox
+            // 
+            this.stopBitsToolStripComboBox.Items.AddRange(new object[] {
+            "1",
+            "1.5",
+            "2"});
+            this.stopBitsToolStripComboBox.Name = "stopBitsToolStripComboBox";
+            this.stopBitsToolStripComboBox.Size = new System.Drawing.Size(121, 23);
+            this.stopBitsToolStripComboBox.SelectedIndexChanged += new System.EventHandler(this.stopBitsToolStripComboBox_SelectedIndexChanged);
+            // 
+            // readTimeoutToolStripMenuItem
+            // 
+            this.readTimeoutToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.readTimeoutToolStripTextBox});
+            this.readTimeoutToolStripMenuItem.Name = "readTimeoutToolStripMenuItem";
+            this.readTimeoutToolStripMenuItem.Size = new System.Drawing.Size(181, 22);
+            this.readTimeoutToolStripMenuItem.Text = "Read Timeout (ms)";
+            // 
+            // readTimeoutToolStripTextBox
+            // 
+            this.readTimeoutToolStripTextBox.MaxLength = 10;
+            this.readTimeoutToolStripTextBox.Name = "readTimeoutToolStripTextBox";
+            this.readTimeoutToolStripTextBox.Size = new System.Drawing.Size(100, 23);
+            this.readTimeoutToolStripTextBox.TextChanged += new System.EventHandler(this.readTimeoutToolStripTextBox_TextChanged);
+            // 
+            // writeTimeoutToolStripMenuItem
+            // 
+            this.writeTimeoutToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.writeTimeoutToolStripTextBox});
+            this.writeTimeoutToolStripMenuItem.Name = "writeTimeoutToolStripMenuItem";
+            this.writeTimeoutToolStripMenuItem.Size = new System.Drawing.Size(181, 22);
+            this.writeTimeoutToolStripMenuItem.Text = "Write Timeout (ms)";
+            // 
+            // writeTimeoutToolStripTextBox
+            // 
+            this.writeTimeoutToolStripTextBox.MaxLength = 10;
+            this.writeTimeoutToolStripTextBox.Name = "writeTimeoutToolStripTextBox";
+            this.writeTimeoutToolStripTextBox.Size = new System.Drawing.Size(100, 23);
+            this.writeTimeoutToolStripTextBox.TextChanged += new System.EventHandler(this.writeTimeoutToolStripTextBox_TextChanged);
             // 
             // updateIntervalToolStripMenuItem
             // 
             this.updateIntervalToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.updateIntervalToolStripMenuItem1,
-            this.updateIntervalToolStripMenuItem2,
-            this.updateIntervalToolStripMenuItem3,
-            this.updateIntervalToolStripMenuItem4,
-            this.updateIntervalToolStripMenuItem5});
+            this.updateIntervalToolStripTextBox});
             this.updateIntervalToolStripMenuItem.Name = "updateIntervalToolStripMenuItem";
-            this.updateIntervalToolStripMenuItem.Size = new System.Drawing.Size(154, 22);
-            this.updateIntervalToolStripMenuItem.Text = "Update Interval";
+            this.updateIntervalToolStripMenuItem.Size = new System.Drawing.Size(181, 22);
+            this.updateIntervalToolStripMenuItem.Text = "Update Interval (ms)";
             // 
-            // updateIntervalToolStripMenuItem1
+            // updateIntervalToolStripTextBox
             // 
-            this.updateIntervalToolStripMenuItem1.Name = "updateIntervalToolStripMenuItem1";
-            this.updateIntervalToolStripMenuItem1.Size = new System.Drawing.Size(117, 22);
-            this.updateIntervalToolStripMenuItem1.Tag = "50";
-            this.updateIntervalToolStripMenuItem1.Text = "50 ms";
-            this.updateIntervalToolStripMenuItem1.Click += new System.EventHandler(this.updateIntervalToolStripMenuItem_Click);
+            this.updateIntervalToolStripTextBox.MaxLength = 10;
+            this.updateIntervalToolStripTextBox.Name = "updateIntervalToolStripTextBox";
+            this.updateIntervalToolStripTextBox.Size = new System.Drawing.Size(100, 23);
+            this.updateIntervalToolStripTextBox.TextChanged += new System.EventHandler(this.updateIntervalToolStripMenuItem_TextChanged);
             // 
-            // updateIntervalToolStripMenuItem2
+            // aboutToolStripMenuItem
             // 
-            this.updateIntervalToolStripMenuItem2.Name = "updateIntervalToolStripMenuItem2";
-            this.updateIntervalToolStripMenuItem2.Size = new System.Drawing.Size(117, 22);
-            this.updateIntervalToolStripMenuItem2.Tag = "100";
-            this.updateIntervalToolStripMenuItem2.Text = "100 ms";
-            this.updateIntervalToolStripMenuItem2.Click += new System.EventHandler(this.updateIntervalToolStripMenuItem_Click);
+            this.aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
+            this.aboutToolStripMenuItem.Size = new System.Drawing.Size(52, 20);
+            this.aboutToolStripMenuItem.Text = "About";
+            this.aboutToolStripMenuItem.Click += new System.EventHandler(this.aboutToolStripMenuItem_Click);
             // 
-            // updateIntervalToolStripMenuItem3
+            // fileToolStripMenuItem
             // 
-            this.updateIntervalToolStripMenuItem3.Name = "updateIntervalToolStripMenuItem3";
-            this.updateIntervalToolStripMenuItem3.Size = new System.Drawing.Size(117, 22);
-            this.updateIntervalToolStripMenuItem3.Tag = "250";
-            this.updateIntervalToolStripMenuItem3.Text = "250 ms";
-            this.updateIntervalToolStripMenuItem3.Click += new System.EventHandler(this.updateIntervalToolStripMenuItem_Click);
+            this.fileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.loadToolStripMenuItem,
+            this.editToolStripMenuItem,
+            this.saveToolStripMenuItem});
+            this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
+            this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
+            this.fileToolStripMenuItem.Text = "File";
             // 
-            // updateIntervalToolStripMenuItem4
+            // loadToolStripMenuItem
             // 
-            this.updateIntervalToolStripMenuItem4.Name = "updateIntervalToolStripMenuItem4";
-            this.updateIntervalToolStripMenuItem4.Size = new System.Drawing.Size(117, 22);
-            this.updateIntervalToolStripMenuItem4.Tag = "500";
-            this.updateIntervalToolStripMenuItem4.Text = "500 ms";
-            this.updateIntervalToolStripMenuItem4.Click += new System.EventHandler(this.updateIntervalToolStripMenuItem_Click);
+            this.loadToolStripMenuItem.Name = "loadToolStripMenuItem";
+            this.loadToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.loadToolStripMenuItem.Text = "Load";
+            this.loadToolStripMenuItem.Click += new System.EventHandler(this.loadToolStripMenuItem_Click);
             // 
-            // updateIntervalToolStripMenuItem5
+            // editToolStripMenuItem
             // 
-            this.updateIntervalToolStripMenuItem5.Name = "updateIntervalToolStripMenuItem5";
-            this.updateIntervalToolStripMenuItem5.Size = new System.Drawing.Size(117, 22);
-            this.updateIntervalToolStripMenuItem5.Tag = "1000";
-            this.updateIntervalToolStripMenuItem5.Text = "1000 ms";
-            this.updateIntervalToolStripMenuItem5.Click += new System.EventHandler(this.updateIntervalToolStripMenuItem_Click);
+            this.editToolStripMenuItem.Name = "editToolStripMenuItem";
+            this.editToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.editToolStripMenuItem.Text = "Edit";
+            // 
+            // saveToolStripMenuItem
+            // 
+            this.saveToolStripMenuItem.Name = "saveToolStripMenuItem";
+            this.saveToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.saveToolStripMenuItem.Text = "Save";
             // 
             // ControlForm
             // 
@@ -166,17 +294,31 @@
         #endregion
 
         private System.Windows.Forms.MenuStrip menuStrip1;
-        private System.Windows.Forms.ToolStripMenuItem settingsToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem portToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem updateIntervalToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem updateIntervalToolStripMenuItem1;
-        private System.Windows.Forms.ToolStripMenuItem updateIntervalToolStripMenuItem2;
-        private System.Windows.Forms.ToolStripMenuItem updateIntervalToolStripMenuItem3;
-        private System.Windows.Forms.ToolStripMenuItem updateIntervalToolStripMenuItem4;
-        private System.Windows.Forms.ToolStripMenuItem updateIntervalToolStripMenuItem5;
         private System.Windows.Forms.ToolStripMenuItem serialToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem connectToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem disconnectToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem settingsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem portNameToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem baudRateToolStripMenuItem;
+        private System.Windows.Forms.ToolStripTextBox baudRateToolStripTextBox;
+        private System.Windows.Forms.ToolStripMenuItem parityToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem dataBitsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem stopBitsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem readTimeoutToolStripMenuItem;
+        private System.Windows.Forms.ToolStripTextBox readTimeoutToolStripTextBox;
+        private System.Windows.Forms.ToolStripMenuItem writeTimeoutToolStripMenuItem;
+        private System.Windows.Forms.ToolStripTextBox writeTimeoutToolStripTextBox;
+        private System.Windows.Forms.ToolStripMenuItem updateIntervalToolStripMenuItem;
+        private System.Windows.Forms.ToolStripTextBox updateIntervalToolStripTextBox;
+        private System.Windows.Forms.ToolStripTextBox dataBitsToolStripTextBox;
+        private System.Windows.Forms.ToolStripMenuItem aboutToolStripMenuItem;
+        private System.Windows.Forms.ToolStripComboBox parityToolStripComboBox;
+        private System.Windows.Forms.ToolStripComboBox stopBitsToolStripComboBox;
+        private System.Windows.Forms.ToolStripComboBox portNameToolStripComboBox;
+        private System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem loadToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem editToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem saveToolStripMenuItem;
     }
 }
 

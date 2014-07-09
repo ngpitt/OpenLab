@@ -1,25 +1,22 @@
 ﻿namespace ControlPlugins
 {
-
     public interface Label
     {
         string text { get; }
-        ushort width { get; }
-        ushort height { get; }
-        ushort xPos { get; }
-        ushort yPos { get; }
-        string command { get; }
+        int width { get; }
+        int height { get; }
+        int x_pos { get; }
+        int y_pos { get; }
         void set(string value);
     }
 
     public interface Button
     {
         string text { get; }
-        ushort width { get; }
-        ushort height { get; }
-        ushort xPos { get; }
-        ushort yPos { get; }
-        string command { get; }
+        int width { get; }
+        int height { get; }
+        int x_pos { get; }
+        int y_pos { get; }
         void click();
     }
 

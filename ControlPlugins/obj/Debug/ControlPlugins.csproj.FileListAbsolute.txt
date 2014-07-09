@@ -2,4 +2,3 @@ C:\cygwin64\home\ngpitt\OpenLab\ControlPlugins\bin\Debug\ControlPlugins.dll
 C:\cygwin64\home\ngpitt\OpenLab\ControlPlugins\bin\Debug\ControlPlugins.pdb
 C:\cygwin64\home\ngpitt\OpenLab\ControlPlugins\obj\Debug\ControlPlugins.dll
 C:\cygwin64\home\ngpitt\OpenLab\ControlPlugins\obj\Debug\ControlPlugins.pdb
-C:\cygwin64\home\ngpitt\OpenLab\ControlPlugins\obj\Debug\ControlPlugins.csprojResolveAssemblyReference.cache
