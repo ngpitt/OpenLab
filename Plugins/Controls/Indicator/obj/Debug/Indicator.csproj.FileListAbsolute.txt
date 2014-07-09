@@ -1,0 +1,14 @@
+C:\cygwin64\home\ngpitt\OpenLab\Indicator\bin\Debug\Indicator.dll
+C:\cygwin64\home\ngpitt\OpenLab\Indicator\bin\Debug\Indicator.pdb
+C:\cygwin64\home\ngpitt\OpenLab\Indicator\bin\Debug\ControlPlugins.dll
+C:\cygwin64\home\ngpitt\OpenLab\Indicator\bin\Debug\ControlPlugins.pdb
+C:\cygwin64\home\ngpitt\OpenLab\Indicator\obj\Debug\Indicator.dll
+C:\cygwin64\home\ngpitt\OpenLab\Indicator\obj\Debug\Indicator.pdb
+C:\cygwin64\home\ngpitt\OpenLab\Indicator\obj\Debug\Indicator.csprojResolveAssemblyReference.cache
+C:\cygwin64\home\ngpitt\OpenLab\Plugins\Controls\Indicator\bin\Debug\Indicator.dll
+C:\cygwin64\home\ngpitt\OpenLab\Plugins\Controls\Indicator\bin\Debug\Indicator.pdb
+C:\cygwin64\home\ngpitt\OpenLab\Plugins\Controls\Indicator\bin\Debug\ControlPlugins.dll
+C:\cygwin64\home\ngpitt\OpenLab\Plugins\Controls\Indicator\bin\Debug\ControlPlugins.pdb
+C:\cygwin64\home\ngpitt\OpenLab\Plugins\Controls\Indicator\obj\Debug\Indicator.csprojResolveAssemblyReference.cache
+C:\cygwin64\home\ngpitt\OpenLab\Plugins\Controls\Indicator\obj\Debug\Indicator.dll
+C:\cygwin64\home\ngpitt\OpenLab\Plugins\Controls\Indicator\obj\Debug\Indicator.pdb

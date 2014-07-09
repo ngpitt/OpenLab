@@ -50,7 +50,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="ControlPlugins">
-      <HintPath>..\ControlPlugins\bin\Debug\ControlPlugins.dll</HintPath>
+      <HintPath>..\Plugins\Controls\ControlPlugins\bin\Debug\ControlPlugins.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -90,25 +90,24 @@
     <None Include="app.manifest">
       <SubType>Designer</SubType>
     </None>
-    <None Include="Samples\config.olc" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="..\DigitalMeter\bin\Debug\DigitalMeter.dll">
+    <Content Include="..\Plugins\Controls\DigitalMeter\bin\Debug\DigitalMeter.dll">
       <Link>Plugins\DigitalMeter.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\Indicator\bin\Debug\Indicator.dll">
+    <Content Include="..\Plugins\Controls\Indicator\bin\Debug\Indicator.dll">
       <Link>Plugins\Indicator.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\Spinner\bin\Debug\Spinner.dll">
+    <Content Include="..\Plugins\Controls\Spinner\bin\Debug\Spinner.dll">
       <Link>Plugins\Spinner.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\Toggle\bin\Debug\Toggle.dll">
+    <Content Include="..\Plugins\Controls\Toggle\bin\Debug\Toggle.dll">
       <Link>Plugins\Toggle.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
