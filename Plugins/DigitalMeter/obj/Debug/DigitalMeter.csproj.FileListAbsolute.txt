@@ -1,0 +1,7 @@
+C:\cygwin64\home\ngpitt\OpenLab\Plugins\DigitalMeter\bin\Debug\DigitalMeter.dll
+C:\cygwin64\home\ngpitt\OpenLab\Plugins\DigitalMeter\bin\Debug\DigitalMeter.pdb
+C:\cygwin64\home\ngpitt\OpenLab\Plugins\DigitalMeter\bin\Debug\PluginInterface.dll
+C:\cygwin64\home\ngpitt\OpenLab\Plugins\DigitalMeter\bin\Debug\PluginInterface.pdb
+C:\cygwin64\home\ngpitt\OpenLab\Plugins\DigitalMeter\obj\Debug\DigitalMeter.csprojResolveAssemblyReference.cache
+C:\cygwin64\home\ngpitt\OpenLab\Plugins\DigitalMeter\obj\Debug\DigitalMeter.dll
+C:\cygwin64\home\ngpitt\OpenLab\Plugins\DigitalMeter\obj\Debug\DigitalMeter.pdb

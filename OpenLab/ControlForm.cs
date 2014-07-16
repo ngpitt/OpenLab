@@ -6,7 +6,7 @@ using System.IO;
 using System.IO.Ports;
 using System.Threading;
 using System.Diagnostics;
-using ControlPlugins;
+using PluginInterface;
 
 namespace OpenLab
 {
@@ -17,14 +17,14 @@ namespace OpenLab
         {
             InitializeComponent();
 
-            controls = new Dictionary<string, IControl>();
-            ICollection<IControl> control_collection = GenericPluginLoader<IControl>.LoadPlugins("Plugins");
+            plugins = new Dictionary<string, IPlugin>();
+            ICollection<IPlugin> plugin_collection = GenericPluginLoader<IPlugin>.LoadPlugins("Plugins");
 
-            if (control_collection != null)
+            if (plugin_collection != null)
             {
-                foreach (var item in control_collection)
+                foreach (var item in plugin_collection)
                 {
-                    controls.Add(item.name, item);
+                    plugins.Add(item.name, item);
                 }
             }
 
@@ -40,9 +40,7 @@ namespace OpenLab
             cleanup_delagate = new CleanupDelagate(cleanupForm);
         }
 
-        private Dictionary<string, IControl> controls;
-        private List<System.Windows.Forms.Label> labels;
-        private List<System.Windows.Forms.Button> buttons;
+        private Dictionary<string, IPlugin> plugins;
         private OpenFileDialog load_file_dialog;
         private XmlDocument config;
         private string port_name;
@@ -197,8 +195,8 @@ namespace OpenLab
         {
             string message = "OpenLab - Open Source Lab Equipment Control Software\n\n";
 
-            message += "Control Plugins:\n";
-            foreach (string plugin in controls.Keys)
+            message += "Plugins:\n";
+            foreach (string plugin in plugins.Keys)
             {
                 message += "    " + plugin + "\n";
             }

@@ -1,12 +1,12 @@
 C:\cygwin64\home\ngpitt\OpenLab\OpenLab\bin\Debug\OpenLab.exe.config
+C:\cygwin64\home\ngpitt\OpenLab\OpenLab\obj\Debug\OpenLab.csprojResolveAssemblyReference.cache
 C:\cygwin64\home\ngpitt\OpenLab\OpenLab\obj\Debug\OpenLab.ControlForm.resources
 C:\cygwin64\home\ngpitt\OpenLab\OpenLab\obj\Debug\OpenLab.Properties.Resources.resources
 C:\cygwin64\home\ngpitt\OpenLab\OpenLab\obj\Debug\OpenLab.csproj.GenerateResource.Cache
-C:\cygwin64\home\ngpitt\OpenLab\OpenLab\obj\Debug\OpenLab.csprojResolveAssemblyReference.cache
 C:\cygwin64\home\ngpitt\OpenLab\OpenLab\bin\Debug\OpenLab.exe
 C:\cygwin64\home\ngpitt\OpenLab\OpenLab\bin\Debug\OpenLab.pdb
-C:\cygwin64\home\ngpitt\OpenLab\OpenLab\bin\Debug\ControlPlugins.dll
-C:\cygwin64\home\ngpitt\OpenLab\OpenLab\bin\Debug\ControlPlugins.pdb
+C:\cygwin64\home\ngpitt\OpenLab\OpenLab\bin\Debug\PluginInterface.dll
+C:\cygwin64\home\ngpitt\OpenLab\OpenLab\bin\Debug\PluginInterface.pdb
 C:\cygwin64\home\ngpitt\OpenLab\OpenLab\obj\Debug\OpenLab.exe
 C:\cygwin64\home\ngpitt\OpenLab\OpenLab\obj\Debug\OpenLab.pdb
 C:\cygwin64\home\ngpitt\OpenLab\OpenLab\bin\Debug\Plugins\DigitalMeter.dll
