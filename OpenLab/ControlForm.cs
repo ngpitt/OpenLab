@@ -1,65 +1,75 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Windows.Forms;
-using System.Xml;
 using System.IO;
+using System.Xml;
+using System.Drawing;
 using System.IO.Ports;
 using System.Threading;
 using System.Diagnostics;
-using PluginInterface;
+using System.Windows.Forms;
+using System.Collections.Generic;
 
 namespace OpenLab
 {
     public partial class ControlForm : Form
     {
-
         public ControlForm()
         {
             InitializeComponent();
 
-            plugins = new Dictionary<string, IPlugin>();
-            ICollection<IPlugin> plugin_collection = GenericPluginLoader<IPlugin>.LoadPlugins("Plugins");
-
-            if (plugin_collection != null)
-            {
-                foreach (var item in plugin_collection)
-                {
-                    plugins.Add(item.name, item);
-                }
-            }
-
             this.FormClosing += new FormClosingEventHandler(controlFormClose);
             this.FormBorderStyle = FormBorderStyle.FixedSingle;
-            this.MaximizeBox = false;
-            this.MinimizeBox = false;
+            disconnectToolStripMenuItem.Enabled = false;
 
             load_file_dialog = new OpenFileDialog();
             config = new XmlDocument();
-
-            update_delagate = new UpdateDelagate(updateForm);
             cleanup_delagate = new CleanupDelagate(cleanupForm);
+            controls = new Dictionary<string, IControl>();
+            groupboxes = new List<GroupBox>();
+
+            ICollection<IControl> control_collection = GenericPluginLoader<IControl>.LoadPlugins("Plugins");
+
+            if (control_collection != null)
+            {
+                foreach (var item in control_collection)
+                {
+                    controls.Add(item.name, item);
+                    item.init(this, config);
+                }
+            }
         }
 
-        private Dictionary<string, IPlugin> plugins;
+        public void serialWrite(string message)
+        {
+            try
+            {
+                serial_port.WriteLine(message);
+            }
+            catch
+            {
+                MessageBox.Show("Serial port disconnected.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                cleanupForm();
+            }
+        }
+
+        private Dictionary<string, IControl> controls;
         private OpenFileDialog load_file_dialog;
         private XmlDocument config;
-        private string port_name;
-        private int baud_rate, data_bits, update_interval, read_timeout, write_timeout;
-        private Parity parity;
-        private StopBits stop_bits;
+        private List<GroupBox> groupboxes;
+        private string port_name = null;
+        private int baud_rate = 115200, data_bits = 8, update_interval = 500, read_timeout = 500, write_timeout = 500;
+        private Parity parity = Parity.None;
+        private StopBits stop_bits = StopBits.One;
         private SafeSerialPort serial_port;
         private bool run = false;
         private Thread update_thread;
-        private delegate void UpdateDelagate(bool pump, int pressure, bool hv, int voltage, int current, int count);
         private delegate void CleanupDelagate();
-        private UpdateDelagate update_delagate;
         private CleanupDelagate cleanup_delagate;
 
         private void controlFormClose(object sender, FormClosingEventArgs e)
         {
             if (run)
             {
-                if (MessageBox.Show("The program is currently running.\nDo you really want to quit?", "OpenLab", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
+                if (MessageBox.Show("The serial port is currently connected.\nDo you really want to quit?", "OpenLab", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
                 {
                     cleanupForm();
                 }
@@ -73,6 +83,7 @@ namespace OpenLab
 
         private void loadToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            int x, y, width, height;
 
             load_file_dialog.Filter = "OpenLab Config (*.olc)|*.olc";
 
@@ -83,11 +94,67 @@ namespace OpenLab
 
             config.Load(load_file_dialog.FileName);
 
-            string xmlcontents = config.InnerXml;
+            XmlNodeList dependency_node_list = config["config"].GetElementsByTagName("dependency");
+
+            foreach (XmlNode dependency_node in dependency_node_list)
+            {
+                if (!controls.ContainsKey(dependency_node.InnerText))
+                {
+                    MessageBox.Show("Required plugin \"" + dependency_node.InnerText + "\" missing.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+            }
+
+            width = Convert.ToInt32(config["config"]["width"].InnerText);
+            height = Convert.ToInt32(config["config"]["height"].InnerText);
+
+            this.Text = config["config"]["text"].InnerText;
+            this.Size = new Size(width, height);
+
+            XmlNodeList groupbox_node_list = config["config"].GetElementsByTagName("groupbox");
+
+            foreach (XmlNode groupbox_node in groupbox_node_list)
+            {
+                GroupBox groupbox = new GroupBox();
+
+                x = Convert.ToInt32(groupbox_node["x"].InnerText);
+                y = Convert.ToInt32(groupbox_node["y"].InnerText);
+                width = Convert.ToInt32(groupbox_node["width"].InnerText);
+                height = Convert.ToInt32(groupbox_node["height"].InnerText);
+
+                groupbox.Text = groupbox_node["text"].InnerText;
+                groupbox.Location = new Point(x, y);
+                groupbox.Size = new Size(width, height);
+                groupbox.Enabled = false;
+
+                this.Controls.Add(groupbox);
+
+                XmlElement groupbox_element = groupbox_node as XmlElement;
+                XmlNodeList control_node_list = groupbox_element.GetElementsByTagName("control");
+
+                foreach (XmlNode control_node in control_node_list)
+                {
+                    controls[control_node["name"].InnerText].add(groupbox, control_node);
+                }
+
+                groupboxes.Add(groupbox);
+            }
+        }
+
+
+        private void quitToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Close();
         }
 
         private void connectToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            if (port_name == null || baud_rate <= 0 || data_bits <= 0 || update_interval <= 0 || read_timeout <= 0 || write_timeout <= 0)
+            {
+                MessageBox.Show("Invalid port settings.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
             serial_port = new SafeSerialPort(port_name, baud_rate, parity, data_bits, stop_bits);
             serial_port.ReadTimeout = read_timeout;
             serial_port.WriteTimeout = write_timeout;
@@ -104,14 +171,32 @@ namespace OpenLab
 
             update_thread = new Thread(updateThread);
             update_thread.Start();
+
+            settingsToolStripMenuItem.Enabled = false;
+            connectToolStripMenuItem.Enabled = false;
+            disconnectToolStripMenuItem.Enabled = true;
+
+            foreach (GroupBox groupbox in groupboxes)
+            {
+                groupbox.Enabled = true;
+            }
         }
 
         private void disconnectToolStripMenuItem_Click(object sender, EventArgs e)
         {
             cleanupForm();
+
+            disconnectToolStripMenuItem.Enabled = false;
+            connectToolStripMenuItem.Enabled = true;
+            settingsToolStripMenuItem.Enabled = true;
+
+            foreach (GroupBox groupbox in groupboxes)
+            {
+                groupbox.Enabled = false;
+            }
         }
 
-        private void portNameToolStripMenuItem_MouseHover(object sender, EventArgs e)
+        private void portNameToolStripMenuItem_DropDownOpening(object sender, EventArgs e)
         {
             string[] ports = SafeSerialPort.GetPortNames();
 
@@ -195,10 +280,10 @@ namespace OpenLab
         {
             string message = "OpenLab - Open Source Lab Equipment Control Software\n\n";
 
-            message += "Plugins:\n";
-            foreach (string plugin in plugins.Keys)
+            message += "Controls:\n";
+            foreach (string control in controls.Keys)
             {
-                message += "    " + plugin + "\n";
+                message += "    " + control + "\n";
             }
 
             MessageBox.Show(message, "OpenLab");
@@ -218,9 +303,10 @@ namespace OpenLab
 
                 try
                 {
-
-                    //this.BeginInvoke(update_delagate, ...);
-
+                    foreach (KeyValuePair<string, IControl> key_value_pair in controls)
+                    {
+                        key_value_pair.Value.update(serial_port);
+                    }
                 }
                 catch
                 {
@@ -239,82 +325,11 @@ namespace OpenLab
             }
         }
 
-        private void updateForm(bool pump, int pressure, bool hv, int voltage, int current, int count)
-        {
-
-            // Update indicators and meters
-
-        }
-
         private void cleanupForm()
         {
             run = false;
             update_thread.Join();
             serial_port.Dispose();
-        }
-
-        private void serialWrite(string message)
-        {
-            try
-            {
-                serial_port.WriteLine(message);
-            }
-            catch
-            {
-                MessageBox.Show("Serial port disconnected.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                cleanupForm();
-            }
-        }
-
-        private class SafeSerialPort : SerialPort
-        {
-            private Stream theBaseStream;
-
-            public SafeSerialPort(string port_name, int baud_rate, Parity parity, int data_bits, StopBits stop_bits)
-                : base(port_name, baud_rate, parity, data_bits, stop_bits)
-            {
-
-            }
-
-            public new void Open()
-            {
-                try
-                {
-                    base.Open();
-                    theBaseStream = BaseStream;
-                    GC.SuppressFinalize(BaseStream);
-                }
-                catch
-                {
-
-                }
-            }
-
-            public new void Dispose()
-            {
-                Dispose(true);
-            }
-
-            protected override void Dispose(bool disposing)
-            {
-                if (disposing && (base.Container != null))
-                {
-                    base.Container.Dispose();
-                }
-                try
-                {
-                    if (theBaseStream.CanRead)
-                    {
-                        theBaseStream.Close();
-                        GC.ReRegisterForFinalize(theBaseStream);
-                    }
-                }
-                catch
-                {
-                    // ignore exception - bug with USB - serial adapters.
-                }
-                base.Dispose(disposing);
-            }
         }
     }
 }

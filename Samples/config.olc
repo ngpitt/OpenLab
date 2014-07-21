@@ -1,94 +1,41 @@
 <config>
-  <dependencies>
-    <plugin name="Digital Meter"/>
-    <plugin name="Indicator"/>
-    <plugin name="Spinner"/>
-    <plugin name="Toggle"/>
-  </dependencies>
-  <window>
-    <label>Reactor Control</label>
-    <width>400</width>
-    <height>400</height>
-    <can_change_size>false</can_change_size>
-  </window>
-  <layout>
-    <equipment>
-      <label>Turbo Pump</label>
-      <plugin name="Toggle">
-        <label>Control</label>
-        <commands>
-          <on>6 1</on>
-          <off>6 0</off>
-        </commands>
-      </plugin>
-      <plugin name="Indicator">
-        <label>Status</label>
-        <commands>
-          <get>9</get>
-        </commands>
-      </plugin>
-    </equipment>
-    <equipment>
-      <label>Reactor Pressure</label>
-      <plugin name="Spinner">
-        <label>mTorr</label>
-        <minimum>0</minimum>
-        <maximum>20</maximum>
-        <commands>
-          <set>3 x</set>
-        </commands>
-      </plugin>
-      <plugin name="Digital Meter">
-        <label>mTorr</label>
-        <commands>
-          <get>11</get>
-        </commands>
-      </plugin>
-    </equipment>
-    <equipment>
-      <label>Power Supply</label>
-      <plugin name="Toggle">
-        <label>HV</label>
-        <commands>
-          <on>7 1</on>
-          <off>7 0</off>
-        </commands>
-      </plugin>
-      <plugin name="Spinner">
-        <label>kV</label>
-        <minimum>0</minimum>
-        <maximum>35</maximum>
-        <commands>
-          <set>8 x</set>
-        </commands>
-      </plugin>
-      <plugin name="Indicator">
-        <label>Status</label>
-        <commands>
-          <get>10</get>
-        </commands>
-      </plugin>
-      <plugin name="Digital Meter">
-        <label>kV</label>
-        <commands>
-          <get>12</get>
-        </commands>
-      </plugin>
-      <plugin name="Digital Meter">
-        <label>mA</label>
-        <commands>
-          <get>13</get>
-        </commands>
-      </plugin>
-    </equipment>
-    <equipment>
-      <label>Neutron Scaler</label>
-      <plugin name="Digital Meter">
-        <label>Count</label>
-        <commands>
-          <get>14</get>
-        </commands>
-      </plugin>
-    </equipment>
-  </layout>
+  <dependency>Meter</dependency>
+  <dependency>Spinner</dependency>
+  <dependency>Toggle</dependency>
+  <text>Reactor Control</text>
+  <width>800</width>
+  <height>600</height>
+  <groupbox>
+    <text>Power Supply</text>
+    <x>20</x>
+    <y>30</y>
+    <width>350</width>
+    <height>120</height>
+    <control>
+      <name>Meter</name>
+      <text>KV</text>
+      <x>20</x>
+      <y>30</y>
+      <get>12</get>
+    </control>
+    <control>
+      <name>Toggle</name>
+      <text>HV</text>
+      <x>100</x>
+      <y>30</y>
+      <on>7 1</on>
+      <off>7 0</off>
+    </control>
+    <control>
+      <name>Spinner</name>
+      <text>KV</text>
+      <x>20</x>
+      <y>75</y>
+      <minimum>0</minimum>
+      <maximum>35</maximum>
+      <decimals>1</decimals>
+      <increment>0.1</increment>
+      <set>8 </set>
+    </control>
+  </groupbox>
 </config>

@@ -1,7 +1,0 @@
-C:\cygwin64\home\ngpitt\OpenLab\Plugins\Spinner\bin\Debug\Spinner.dll
-C:\cygwin64\home\ngpitt\OpenLab\Plugins\Spinner\bin\Debug\Spinner.pdb
-C:\cygwin64\home\ngpitt\OpenLab\Plugins\Spinner\bin\Debug\PluginInterface.dll
-C:\cygwin64\home\ngpitt\OpenLab\Plugins\Spinner\bin\Debug\PluginInterface.pdb
-C:\cygwin64\home\ngpitt\OpenLab\Plugins\Spinner\obj\Debug\Spinner.csprojResolveAssemblyReference.cache
-C:\cygwin64\home\ngpitt\OpenLab\Plugins\Spinner\obj\Debug\Spinner.dll
-C:\cygwin64\home\ngpitt\OpenLab\Plugins\Spinner\obj\Debug\Spinner.pdb

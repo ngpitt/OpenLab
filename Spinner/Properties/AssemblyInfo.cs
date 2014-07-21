@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Toggle")]
+[assembly: AssemblyTitle("Spinner")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Xphysics")]
-[assembly: AssemblyProduct("Toggle")]
+[assembly: AssemblyProduct("Spinner")]
 [assembly: AssemblyCopyright("Copyright ©  2014")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("3bb1907c-4cf4-43f7-bb0a-2f6544ccdeb5")]
+[assembly: Guid("abe6750d-2f11-4586-bb5a-2567c5dbd8db")]
 
 // Version information for an assembly consists of the following four values:
 //

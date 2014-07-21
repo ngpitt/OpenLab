@@ -1,4 +1,0 @@
-C:\cygwin64\home\ngpitt\OpenLab\Plugins\PluginInterface\bin\Debug\PluginInterface.dll
-C:\cygwin64\home\ngpitt\OpenLab\Plugins\PluginInterface\bin\Debug\PluginInterface.pdb
-C:\cygwin64\home\ngpitt\OpenLab\Plugins\PluginInterface\obj\Debug\PluginInterface.dll
-C:\cygwin64\home\ngpitt\OpenLab\Plugins\PluginInterface\obj\Debug\PluginInterface.pdb
