@@ -26,6 +26,50 @@ namespace OpenLab
             controls = new Dictionary<string, IControl>();
             groupboxes = new List<GroupBox>();
 
+            portNameToolStripComboBox.Text = port_name = Settings.Default.port_name;
+            baud_rate = Settings.Default.baud_rate;
+            baudRateToolStripTextBox.Text = Convert.ToString(baud_rate);
+            parity = Settings.Default.parity;
+            switch (parity)
+            {
+                case Parity.Even:
+                    parityToolStripComboBox.SelectedIndex = 0;
+                    break;
+                case Parity.Mark:
+                    parityToolStripComboBox.SelectedIndex = 1;
+                    break;
+                case Parity.None:
+                    parityToolStripComboBox.SelectedIndex = 2;
+                    break;
+                case Parity.Odd:
+                    parityToolStripComboBox.SelectedIndex = 3;
+                    break;
+                case Parity.Space:
+                    parityToolStripComboBox.SelectedIndex = 4;
+                    break;
+            }
+            data_bits = Settings.Default.data_bits;
+            dataBitsToolStripTextBox.Text = Convert.ToString(data_bits);
+            stop_bits = Settings.Default.stop_bits;
+            switch (stop_bits)
+            {
+                case StopBits.One:
+                    stopBitsToolStripComboBox.SelectedIndex = 0;
+                    break;
+                case StopBits.OnePointFive:
+                    stopBitsToolStripComboBox.SelectedIndex = 1;
+                    break;
+                case StopBits.Two:
+                    stopBitsToolStripComboBox.SelectedIndex = 2;
+                    break;
+            }
+            read_timeout = Settings.Default.read_timeout;
+            readTimeoutToolStripTextBox.Text = Convert.ToString(read_timeout);
+            write_timeout = Settings.Default.write_timeout;
+            writeTimeoutToolStripTextBox.Text = Convert.ToString(write_timeout);
+            update_interval = Settings.Default.update_interval;
+            updateIntervalToolStripTextBox.Text = Convert.ToString(update_interval);
+
             ICollection<IControl> control_collection = GenericPluginLoader<IControl>.LoadPlugins("Plugins");
 
             if (control_collection != null)
@@ -55,10 +99,10 @@ namespace OpenLab
         private OpenFileDialog load_file_dialog;
         private XmlDocument config;
         private List<GroupBox> groupboxes;
-        private string port_name = null;
-        private int baud_rate = 115200, data_bits = 8, update_interval = 500, read_timeout = 500, write_timeout = 500;
-        private Parity parity = Parity.None;
-        private StopBits stop_bits = StopBits.One;
+        private string port_name;
+        private int baud_rate, data_bits, update_interval, read_timeout, write_timeout;
+        private Parity parity;
+        private StopBits stop_bits;
         private SafeSerialPort serial_port;
         private bool run = false;
         private Thread update_thread;
@@ -79,6 +123,16 @@ namespace OpenLab
                     return;
                 }
             }
+
+            Settings.Default.port_name = port_name;
+            Settings.Default.baud_rate = baud_rate;
+            Settings.Default.parity = parity;
+            Settings.Default.data_bits = data_bits;
+            Settings.Default.stop_bits = stop_bits;
+            Settings.Default.read_timeout = read_timeout;
+            Settings.Default.write_timeout = write_timeout;
+            Settings.Default.update_interval = update_interval;
+            Settings.Default.Save();
         }
 
         private void loadToolStripMenuItem_Click(object sender, EventArgs e)
@@ -149,7 +203,7 @@ namespace OpenLab
 
         private void connectToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (port_name == null || baud_rate <= 0 || data_bits <= 0 || update_interval <= 0 || read_timeout <= 0 || write_timeout <= 0)
+            if (port_name == "" || baud_rate <= 0 || data_bits <= 0 || update_interval <= 0 || read_timeout <= 0 || write_timeout <= 0)
             {
                 MessageBox.Show("Invalid port settings.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
@@ -215,7 +269,14 @@ namespace OpenLab
 
         private void baudRateToolStripTextBox_TextChanged(object sender, EventArgs e)
         {
-            baud_rate = Convert.ToInt32(baudRateToolStripTextBox.Text);
+            try
+            {
+                baud_rate = Convert.ToInt32(baudRateToolStripTextBox.Text);
+            }
+            catch
+            {
+                // Ignore exception
+            }
         }
 
         private void parityToolStripComboBox_SelectedIndexChanged(object sender, EventArgs e)
@@ -242,7 +303,14 @@ namespace OpenLab
 
         private void dataBitsToolStripTextBox_TextChanged(object sender, EventArgs e)
         {
-            data_bits = Convert.ToInt32(dataBitsToolStripTextBox.Text);
+            try
+            {
+                data_bits = Convert.ToInt32(dataBitsToolStripTextBox.Text);
+            }
+            catch
+            {
+                // Ignore exception
+            }
         }
 
         private void stopBitsToolStripComboBox_SelectedIndexChanged(object sender, EventArgs e)
@@ -263,17 +331,38 @@ namespace OpenLab
 
         private void readTimeoutToolStripTextBox_TextChanged(object sender, EventArgs e)
         {
-            read_timeout = Convert.ToInt32(readTimeoutToolStripTextBox.Text);
+            try
+            {
+                read_timeout = Convert.ToInt32(readTimeoutToolStripTextBox.Text);
+            }
+            catch
+            {
+                // Ignore exception
+            }
         }
 
         private void writeTimeoutToolStripTextBox_TextChanged(object sender, EventArgs e)
         {
-            write_timeout = Convert.ToInt32(writeTimeoutToolStripTextBox.Text);
+            try
+            {
+                write_timeout = Convert.ToInt32(writeTimeoutToolStripTextBox.Text);
+            }
+            catch
+            {
+                // Ignore exception
+            }
         }
 
         private void updateIntervalToolStripMenuItem_TextChanged(object sender, EventArgs e)
         {
-            update_interval = Convert.ToInt32(updateIntervalToolStripTextBox.Text);
+            try
+            {
+                update_interval = Convert.ToInt32(updateIntervalToolStripTextBox.Text);
+            }
+            catch
+            {
+                // Ignore exception
+            }
         }
 
         private void aboutToolStripMenuItem_Click(object sender, EventArgs e)
