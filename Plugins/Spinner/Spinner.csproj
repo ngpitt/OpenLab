@@ -45,7 +45,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\OpenLab\OpenLab.csproj">
+    <ProjectReference Include="..\..\OpenLab\OpenLab.csproj">
       <Project>{5d299693-9e26-4a3a-8280-72776a9f8f9f}</Project>
       <Name>OpenLab</Name>
     </ProjectReference>
