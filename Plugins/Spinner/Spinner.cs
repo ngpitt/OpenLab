@@ -9,11 +9,11 @@ using Tags = System.Collections.Generic.Dictionary<string, string>;
 
 namespace Spinner
 {
-    public class Spinner : IControl
+    public class Spinner : ControlPlugin
     {
-        public Spinner()
+        public Spinner(ControlForm control_form)
         {
-            panels = new List<Panel>();
+            this.control_form = control_form;
         }
 
         public string name
@@ -24,277 +24,242 @@ namespace Spinner
             }
         }
 
-        public void init(ControlForm control_form)
-        {
-            this.control_form = control_form;
-        }
-
-        public FlowLayoutPanel add(GroupBox group_box, Point location)
+        public FlowLayoutPanel create(Point location)
         {
             Tags tags = new Tags();
             NumericUpDown spinner = new NumericUpDown();
 
-            tags["text"] = "New Spinner";
+            tags["label"] = name;
             spinner.Minimum = spinner.Maximum = spinner.Increment = 0;
             spinner.DecimalPlaces = 0;
             tags["set_command"] = "";
 
-            return add(group_box, location, spinner, tags);
+            return create(location, spinner, tags);
         }
 
-        public FlowLayoutPanel add(GroupBox group_box, XmlNode xml_node)
+        public FlowLayoutPanel create(XmlNode xml_node)
         {
             int x, y;
             NumericUpDown spinner = new NumericUpDown();
             Tags tags = new Tags();
 
-            tags["text"] = xml_node["text"].InnerText;
+            tags["label"] = xml_node["label"].InnerText;
             x = Convert.ToInt32(xml_node["x"].InnerText);
             y = Convert.ToInt32(xml_node["y"].InnerText);
             spinner.Minimum = Convert.ToDecimal(xml_node["minimum"].InnerText);
             spinner.Maximum = Convert.ToDecimal(xml_node["maximum"].InnerText);
-            spinner.DecimalPlaces = Convert.ToInt32(xml_node["decimals"].InnerText);
+            spinner.DecimalPlaces = Convert.ToInt32(xml_node["decimal_places"].InnerText);
             spinner.Increment = Convert.ToDecimal(xml_node["increment"].InnerText);
             tags["set_command"] = xml_node["set_command"].InnerText;
 
-            return add(group_box, new Point(x, y), spinner, tags);
+            return create(new Point(x, y), spinner, tags);
         }
 
-        public List<ToolStripMenuItem> settings()
+        public FlowLayoutPanel copy(FlowLayoutPanel source_control)
+        {
+            FlowLayoutPanel control = new FlowLayoutPanel();
+            Label label = new Label();
+            NumericUpDown spinner = new NumericUpDown();
+            Padding padding = new Padding();
+            NumericUpDown source_spinner = source_control.Controls[1] as NumericUpDown;
+            Tags tags = source_control.Tag as Tags;
+
+            control.Location = source_control.Location;
+            control.AutoSize = true;
+            control.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            control.Tag = new Tags(tags);
+
+            padding.Top = 6;
+            label.Padding = padding;
+            label.AutoSize = true;
+            control.Controls.Add(label);
+            label.Text = tags["label"] + ": ";
+
+            spinner.Size = new Size(100, 20);
+            spinner.Minimum = source_spinner.Minimum;
+            spinner.Maximum = source_spinner.Maximum;
+            spinner.DecimalPlaces = source_spinner.DecimalPlaces;
+            spinner.Increment = source_spinner.Increment;
+            spinner.ValueChanged += new System.EventHandler(spinner_ValueChanged);
+            control.Controls.Add(spinner);
+
+            return control;
+        }
+
+        public void update(FlowLayoutPanel control, SafeSerialPort serial_port)
+        {
+            // Nothing to do here!
+        }
+
+        public List<ToolStripMenuItem> settings(FlowLayoutPanel control)
         {
             List<ToolStripMenuItem> menu_items = new List<ToolStripMenuItem>();
+            NumericUpDown spinner = control.Controls[1] as NumericUpDown;
+            Tags tags = control.Tag as Tags;
 
             ToolStripTextBox minimum_text_box = new ToolStripTextBox();
-            minimum_text_box.Name = "spinnerMinimumToolStripTextBox";
-            minimum_text_box.TextChanged += new EventHandler(spinnerMinimumToolStripTextBox_TextChanged);
+            minimum_text_box.Text = Convert.ToString(spinner.Minimum);
+            minimum_text_box.TextChanged += new EventHandler(minimumToolStripTextBox_TextChanged);
 
             ToolStripTextBox maximum_text_box = new ToolStripTextBox();
-            maximum_text_box.Name = "spinnerMaximumToolStripTextBox";
-            maximum_text_box.TextChanged += new EventHandler(spinnerMaximumToolStripTextBox_TextChanged);
+            maximum_text_box.Text = Convert.ToString(spinner.Maximum);
+            maximum_text_box.TextChanged += new EventHandler(maximumToolStripTextBox_TextChanged);
 
-            ToolStripTextBox decimals_text_box = new ToolStripTextBox();
-            decimals_text_box.Name = "spinnerDecimalsToolStripTextBox";
-            decimals_text_box.TextChanged += new EventHandler(spinnerDecimalsToolStripTextBox_TextChanged);
+            ToolStripTextBox decimal_places_text_box = new ToolStripTextBox();
+            decimal_places_text_box.Text = Convert.ToString(spinner.DecimalPlaces);
+            decimal_places_text_box.TextChanged += new EventHandler(decimalPlacesToolStripTextBox_TextChanged);
 
             ToolStripTextBox increment_text_box = new ToolStripTextBox();
-            increment_text_box.Name = "spinnerIncrementToolStripTextBox";
-            increment_text_box.TextChanged += new EventHandler(spinnerIncrementToolStripTextBox_TextChanged);
+            increment_text_box.Text = Convert.ToString(spinner.Increment);
+            increment_text_box.TextChanged += new EventHandler(incrementToolStripTextBox_TextChanged);
 
             ToolStripTextBox set_command_text_box = new ToolStripTextBox();
-            set_command_text_box.Name = "spinnerSetCommandToolStripTextBox";
-            set_command_text_box.TextChanged += new EventHandler(spinnerSetCommandToolStripTextBox_TextChanged);
+            set_command_text_box.Text = tags["set_command"];
+            set_command_text_box.TextChanged += new EventHandler(setCommandToolStripTextBox_TextChanged);
 
             ToolStripMenuItem minimum_menu_item = new ToolStripMenuItem();
-            minimum_menu_item.Name = "spinnerMinimumToolStripMenuItem";
             minimum_menu_item.Text = "Minimum";
-            minimum_menu_item.MouseHover += new EventHandler(spinnerMinimumToolStripMenuItem_MouseHover);
             minimum_menu_item.DropDownItems.Add(minimum_text_box);
 
             ToolStripMenuItem maximum_menu_item = new ToolStripMenuItem();
-            maximum_menu_item.Name = "spinnerMaximumToolStripMenuItem";
             maximum_menu_item.Text = "Maximum";
-            maximum_menu_item.MouseHover += new EventHandler(spinnerMaximumToolStripMenuItem_MouseHover);
             maximum_menu_item.DropDownItems.Add(maximum_text_box);
 
-            ToolStripMenuItem decimals_menu_item = new ToolStripMenuItem();
-            decimals_menu_item.Name = "spinnerDecimalsToolStripMenuItem";
-            decimals_menu_item.Text = "Decimals";
-            decimals_menu_item.MouseHover += new EventHandler(spinnerDecimalsToolStripMenuItem_MouseHover);
-            decimals_menu_item.DropDownItems.Add(decimals_text_box);
+            ToolStripMenuItem decimal_places_menu_item = new ToolStripMenuItem();
+            decimal_places_menu_item.Text = "Decimal Places";
+            decimal_places_menu_item.DropDownItems.Add(decimal_places_text_box);
 
             ToolStripMenuItem increment_menu_item = new ToolStripMenuItem();
-            increment_menu_item.Name = "spinnerIncrementToolStripMenuItem";
             increment_menu_item.Text = "Increment";
-            increment_menu_item.MouseHover += new EventHandler(spinnerIncrementToolStripMenuItem_MouseHover);
             increment_menu_item.DropDownItems.Add(increment_text_box);
 
             ToolStripMenuItem set_command_menu_item = new ToolStripMenuItem();
-            set_command_menu_item.Name = "spinnerSetCommandToolStripMenuItem";
             set_command_menu_item.Text = "Set Command";
-            set_command_menu_item.MouseHover += new EventHandler(spinnerSetCommandToolStripMenuItem_MouseHover);
             set_command_menu_item.DropDownItems.Add(set_command_text_box);
 
             menu_items.Add(minimum_menu_item);
             menu_items.Add(maximum_menu_item);
-            menu_items.Add(decimals_menu_item);
+            menu_items.Add(decimal_places_menu_item);
             menu_items.Add(increment_menu_item);
             menu_items.Add(set_command_menu_item);
 
             return menu_items;
         }
 
-        public XmlDocument save(GroupBox group_box)
+        public XmlDocument save(FlowLayoutPanel control)
         {
             XmlDocument control_config = new XmlDocument();
+            Tags tags = control.Tag as Tags;
+            NumericUpDown spinner = control.Controls[1] as NumericUpDown;
 
-            XmlNode config_node = control_config.CreateElement("config");
-            control_config.AppendChild(config_node);
-            foreach (FlowLayoutPanel panel in group_box.Controls)
-            {
-                if (panels.Contains(panel))
-                {
-                    Tags tags = panel.Tag as Tags;
-                    NumericUpDown spinner = panel.Controls[1] as NumericUpDown;
+            XmlNode control_node = control_config.CreateElement("control");
 
-                    XmlNode control_node = control_config.CreateElement("control");
+            XmlNode plugin_node = control_config.CreateElement("plugin");
+            plugin_node.InnerText = name;
+            control_node.AppendChild(plugin_node);
 
-                    XmlNode name_node = control_config.CreateElement("name");
-                    name_node.InnerText = name;
-                    control_node.AppendChild(name_node);
+            XmlNode label_node = control_config.CreateElement("label");
+            label_node.InnerText = tags["label"];
+            control_node.AppendChild(label_node);
 
-                    XmlNode text_node = control_config.CreateElement("text");
-                    text_node.InnerText = tags["text"];
-                    control_node.AppendChild(text_node);
+            XmlNode x_node = control_config.CreateElement("x");
+            x_node.InnerText = Convert.ToString(control.Location.X);
+            control_node.AppendChild(x_node);
 
-                    XmlNode x_node = control_config.CreateElement("x");
-                    x_node.InnerText = Convert.ToString(panel.Location.X);
-                    control_node.AppendChild(x_node);
+            XmlNode y_node = control_config.CreateElement("y");
+            y_node.InnerText = Convert.ToString(control.Location.Y);
+            control_node.AppendChild(y_node);
 
-                    XmlNode y_node = control_config.CreateElement("y");
-                    y_node.InnerText = Convert.ToString(panel.Location.Y);
-                    control_node.AppendChild(y_node);
+            XmlNode minimum_node = control_config.CreateElement("minimum");
+            minimum_node.InnerText = Convert.ToString(spinner.Minimum);
+            control_node.AppendChild(minimum_node);
 
-                    XmlNode minimum_node = control_config.CreateElement("minimum");
-                    minimum_node.InnerText = Convert.ToString(spinner.Minimum);
-                    control_node.AppendChild(minimum_node);
+            XmlNode maximum_node = control_config.CreateElement("maximum");
+            maximum_node.InnerText = Convert.ToString(spinner.Maximum);
+            control_node.AppendChild(maximum_node);
 
-                    XmlNode maximum_node = control_config.CreateElement("maximum");
-                    maximum_node.InnerText = Convert.ToString(spinner.Maximum);
-                    control_node.AppendChild(maximum_node);
+            XmlNode decimal_places_node = control_config.CreateElement("decimal_places");
+            decimal_places_node.InnerText = Convert.ToString(spinner.DecimalPlaces);
+            control_node.AppendChild(decimal_places_node);
 
-                    XmlNode decimals_node = control_config.CreateElement("decimals");
-                    decimals_node.InnerText = Convert.ToString(spinner.DecimalPlaces);
-                    control_node.AppendChild(decimals_node);
+            XmlNode increment_node = control_config.CreateElement("increment");
+            increment_node.InnerText = Convert.ToString(spinner.Increment);
+            control_node.AppendChild(increment_node);
 
-                    XmlNode increment_node = control_config.CreateElement("increment");
-                    increment_node.InnerText = Convert.ToString(spinner.Increment);
-                    control_node.AppendChild(increment_node);
+            XmlNode set_command_node = control_config.CreateElement("set_command");
+            set_command_node.InnerText = tags["set_command"];
+            control_node.AppendChild(set_command_node);
 
-                    XmlNode set_node = control_config.CreateElement("set_command");
-                    set_node.InnerText = tags["set_command"];
-                    control_node.AppendChild(set_node);
-
-                    config_node.AppendChild(control_node);
-                }
-            }
+            control_config.AppendChild(control_node);
 
             return control_config;
         }
 
-        public void update(SafeSerialPort serial_port)
-        {
-            // Nothing to do here!
-        }
-
-        public void reset()
-        {
-            panels.Clear();
-        }
-
         private ControlForm control_form;
-        private List<Panel> panels;
 
-        private FlowLayoutPanel add(GroupBox group_box, Point location, NumericUpDown spinner, Tags tags)
+        private FlowLayoutPanel create(Point location, NumericUpDown spinner, Tags tags)
         {
-            FlowLayoutPanel panel = new FlowLayoutPanel();
+            FlowLayoutPanel control = new FlowLayoutPanel();
             Label label = new Label();
             Padding padding = new Padding();
 
-            tags["name"] = name;
-            panel.Location = location;
-            panel.AutoSize = true;
-            panel.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-            panel.Tag = tags;
+            tags["plugin"] = name;
+            control.Location = location;
+            control.AutoSize = true;
+            control.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            control.Tag = tags;
 
             padding.Top = 6;
             label.Padding = padding;
             label.AutoSize = true;
-            panel.Controls.Add(label);
-            label.Text = tags["text"] + ": ";
+            control.Controls.Add(label);
+            label.Text = tags["label"] + ": ";
 
             spinner.Size = new Size(100, 20);
             spinner.ValueChanged += new System.EventHandler(spinner_ValueChanged);
-            panel.Controls.Add(spinner);
+            control.Controls.Add(spinner);
 
-            group_box.Controls.Add(panel);
-            panels.Add(panel);
-
-            return panel;
+            return control;
         }
 
-        private void spinnerMinimumToolStripTextBox_TextChanged(object sender, EventArgs e)
+        private void minimumToolStripTextBox_TextChanged(object sender, EventArgs e)
         {
             ToolStripTextBox text_box = sender as ToolStripTextBox;
-            FlowLayoutPanel panel = control_form.menuSource() as FlowLayoutPanel;
-            (panel.Controls[1] as NumericUpDown).Minimum = Convert.ToDecimal(text_box.Text);
+            FlowLayoutPanel control = control_form.menuSource as FlowLayoutPanel;
+            NumericUpDown spinner = control.Controls[1] as NumericUpDown;
+            spinner.Minimum = Convert.ToDecimal(text_box.Text);
         }
 
-        private void spinnerMaximumToolStripTextBox_TextChanged(object sender, EventArgs e)
+        private void maximumToolStripTextBox_TextChanged(object sender, EventArgs e)
         {
             ToolStripTextBox text_box = sender as ToolStripTextBox;
-            FlowLayoutPanel panel = control_form.menuSource() as FlowLayoutPanel;
-            (panel.Controls[1] as NumericUpDown).Maximum = Convert.ToDecimal(text_box.Text);
+            FlowLayoutPanel control = control_form.menuSource as FlowLayoutPanel;
+            NumericUpDown spinner = control.Controls[1] as NumericUpDown;
+            spinner.Maximum = Convert.ToDecimal(text_box.Text);
         }
 
-        private void spinnerDecimalsToolStripTextBox_TextChanged(object sender, EventArgs e)
+        private void decimalPlacesToolStripTextBox_TextChanged(object sender, EventArgs e)
         {
             ToolStripTextBox text_box = sender as ToolStripTextBox;
-            FlowLayoutPanel panel = control_form.menuSource() as FlowLayoutPanel;
-            (panel.Controls[1] as NumericUpDown).DecimalPlaces = Convert.ToInt32(text_box.Text);
+            FlowLayoutPanel control = control_form.menuSource as FlowLayoutPanel;
+            NumericUpDown spinner = control.Controls[1] as NumericUpDown;
+            spinner.DecimalPlaces = Convert.ToInt32(text_box.Text);
         }
 
-        private void spinnerIncrementToolStripTextBox_TextChanged(object sender, EventArgs e)
+        private void incrementToolStripTextBox_TextChanged(object sender, EventArgs e)
         {
             ToolStripTextBox text_box = sender as ToolStripTextBox;
-            FlowLayoutPanel panel = control_form.menuSource() as FlowLayoutPanel;
-            (panel.Controls[1] as NumericUpDown).Increment = Convert.ToDecimal(text_box.Text);
+            FlowLayoutPanel control = control_form.menuSource as FlowLayoutPanel;
+            NumericUpDown spinner = control.Controls[1] as NumericUpDown;
+            spinner.Increment = Convert.ToDecimal(text_box.Text);
         }
 
-        private void spinnerSetCommandToolStripTextBox_TextChanged(object sender, EventArgs e)
+        private void setCommandToolStripTextBox_TextChanged(object sender, EventArgs e)
         {
             ToolStripTextBox text_box = sender as ToolStripTextBox;
-            FlowLayoutPanel panel = control_form.menuSource() as FlowLayoutPanel;
-            (panel.Tag as Tags)["set_command"] = text_box.Text;
-        }
-
-        private void spinnerMinimumToolStripMenuItem_MouseHover(object sender, EventArgs e)
-        {
-            ToolStripMenuItem menu_item = sender as ToolStripMenuItem;
-            FlowLayoutPanel panel = control_form.menuSource() as FlowLayoutPanel;
-            NumericUpDown spinner = panel.Controls[1] as NumericUpDown;
-            menu_item.DropDownItems[0].Text = Convert.ToString(spinner.Minimum);
-        }
-
-        private void spinnerMaximumToolStripMenuItem_MouseHover(object sender, EventArgs e)
-        {
-            ToolStripMenuItem menu_item = sender as ToolStripMenuItem;
-            FlowLayoutPanel panel = control_form.menuSource() as FlowLayoutPanel;
-            NumericUpDown spinner = panel.Controls[1] as NumericUpDown;
-            menu_item.DropDownItems[0].Text = Convert.ToString(spinner.Maximum);
-        }
-
-        private void spinnerDecimalsToolStripMenuItem_MouseHover(object sender, EventArgs e)
-        {
-            ToolStripMenuItem menu_item = sender as ToolStripMenuItem;
-            FlowLayoutPanel panel = control_form.menuSource() as FlowLayoutPanel;
-            NumericUpDown spinner = panel.Controls[1] as NumericUpDown;
-            menu_item.DropDownItems[0].Text = Convert.ToString(spinner.DecimalPlaces);
-        }
-
-        private void spinnerIncrementToolStripMenuItem_MouseHover(object sender, EventArgs e)
-        {
-            ToolStripMenuItem menu_item = sender as ToolStripMenuItem;
-            FlowLayoutPanel panel = control_form.menuSource() as FlowLayoutPanel;
-            NumericUpDown spinner = panel.Controls[1] as NumericUpDown;
-            menu_item.DropDownItems[0].Text = Convert.ToString(spinner.Increment);
-        }
-
-        private void spinnerSetCommandToolStripMenuItem_MouseHover(object sender, EventArgs e)
-        {
-            ToolStripMenuItem menu_item = sender as ToolStripMenuItem;
-            FlowLayoutPanel panel = control_form.menuSource() as FlowLayoutPanel;
-            Tags tags = panel.Tag as Tags;
-            menu_item.DropDownItems[0].Text = tags["set_command"];
+            FlowLayoutPanel control = control_form.menuSource as FlowLayoutPanel;
+            Tags tags = control.Tag as Tags;
+            tags["set_command"] = text_box.Text;
         }
 
         private void spinner_ValueChanged(object sender, EventArgs e)

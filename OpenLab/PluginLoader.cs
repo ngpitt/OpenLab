@@ -23,9 +23,9 @@ using System.Reflection;
 
 namespace OpenLab
 {
-    public static class GenericPluginLoader<T>
+    public static class PluginLoader<T>
     {
-        public static ICollection<T> LoadPlugins(string path)
+        public static ICollection<T> LoadPlugins(string path, ControlForm control_form)
         {
             string[] dllFileNames = null;
 
@@ -48,7 +48,6 @@ namespace OpenLab
                     if (assembly != null)
                     {
                         Type[] types = assembly.GetTypes();
-
                         foreach (Type type in types)
                         {
                             if (type.IsInterface || type.IsAbstract)
@@ -69,7 +68,7 @@ namespace OpenLab
                 ICollection<T> plugins = new List<T>(pluginTypes.Count);
                 foreach (Type type in pluginTypes)
                 {
-                    T plugin = (T)Activator.CreateInstance(type);
+                    T plugin = (T)Activator.CreateInstance(type, control_form);
                     plugins.Add(plugin);
                 }
 

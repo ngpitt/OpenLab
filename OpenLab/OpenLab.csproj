@@ -64,8 +64,8 @@
     <Compile Include="SafeSerialPort.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="IControl.cs" />
-    <Compile Include="GenericPluginLoader.cs" />
+    <Compile Include="ControlPlugin.cs" />
+    <Compile Include="PluginLoader.cs" />
     <Compile Include="ControlForm.cs">
       <SubType>Form</SubType>
     </Compile>

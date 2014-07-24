@@ -1,48 +1,49 @@
+<!--OpenLab Config-->
 <config>
-  <text>Reactor Control</text>
-  <width>367</width>
-  <height>218</height>
   <dependency>Meter</dependency>
   <dependency>Spinner</dependency>
   <dependency>Toggle</dependency>
-  <groupbox>
-    <text>Power Supply</text>
-    <x>32</x>
-    <y>45</y>
-    <width>278</width>
-    <height>98</height>
+  <name>OpenLab</name>
+  <width>320</width>
+  <height>204</height>
+  <group>
+    <label>Power Supply</label>
+    <x>31</x>
+    <y>43</y>
+    <width>241</width>
+    <height>96</height>
     <control>
-      <name>Meter</name>
-      <text>kV</text>
+      <plugin>Meter</plugin>
+      <label>kV</label>
       <x>12</x>
-      <y>25</y>
+      <y>29</y>
       <get_command>12</get_command>
     </control>
     <control>
-      <name>Meter</name>
-      <text>mA</text>
+      <plugin>Meter</plugin>
+      <label>mA</label>
       <x>12</x>
       <y>64</y>
       <get_command>13</get_command>
     </control>
     <control>
-      <name>Spinner</name>
-      <text>kV</text>
-      <x>118</x>
-      <y>56</y>
+      <plugin>Spinner</plugin>
+      <label>kV</label>
+      <x>89</x>
+      <y>57</y>
       <minimum>0</minimum>
       <maximum>35</maximum>
-      <decimals>1</decimals>
+      <decimal_places>1</decimal_places>
       <increment>0.1</increment>
       <set_command>8 </set_command>
     </control>
     <control>
-      <name>Toggle</name>
-      <text>HV</text>
-      <x>118</x>
-      <y>17</y>
+      <plugin>Toggle</plugin>
+      <label>HV</label>
+      <x>87</x>
+      <y>20</y>
       <on_command>7 1</on_command>
       <off_command>7 0</off_command>
     </control>
-  </groupbox>
+  </group>
 </config>
