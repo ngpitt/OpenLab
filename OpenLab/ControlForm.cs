@@ -280,8 +280,8 @@ namespace OpenLab
             group.MouseMove -= new MouseEventHandler(group_MouseMove);
             group.MouseDown -= new MouseEventHandler(group_MouseDown);
             group.MouseUp -= new MouseEventHandler(group_MouseUp);
-            group.MouseEnter += new EventHandler(group_MouseEnter);
-            group.MouseLeave += new EventHandler(group_MouseLeave);
+            group.MouseEnter -= new EventHandler(group_MouseEnter);
+            group.MouseLeave -= new EventHandler(group_MouseLeave);
         }
 
         private void saveControl(FlowLayoutPanel control)
