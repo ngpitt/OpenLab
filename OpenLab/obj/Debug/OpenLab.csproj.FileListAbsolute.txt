@@ -6,4 +6,3 @@ C:\cygwin64\home\ngpitt\OpenLab\OpenLab\obj\Debug\OpenLab.Properties.Resources.r
 C:\cygwin64\home\ngpitt\OpenLab\OpenLab\obj\Debug\OpenLab.csproj.GenerateResource.Cache
 C:\cygwin64\home\ngpitt\OpenLab\OpenLab\obj\Debug\OpenLab.exe
 C:\cygwin64\home\ngpitt\OpenLab\OpenLab\obj\Debug\OpenLab.pdb
-C:\cygwin64\home\ngpitt\OpenLab\OpenLab\obj\Debug\OpenLab.csprojResolveAssemblyReference.cache

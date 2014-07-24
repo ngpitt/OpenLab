@@ -58,20 +58,7 @@ namespace Meter
 
         public FlowLayoutPanel copy(FlowLayoutPanel source_control)
         {
-            FlowLayoutPanel control = new FlowLayoutPanel();
-            Label label = new Label();
-            Tags tags = source_control.Tag as Tags;
-
-            control.Location = source_control.Location;
-            control.AutoSize = true;
-            control.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-            control.Tag = new Tags(tags);
-
-            label.AutoSize = true;
-            label.Text = tags["label"] + ": ";
-            control.Controls.Add(label);
-
-            return control;
+            return create(source_control.Location, new Tags(source_control.Tag as Tags));
         }
 
         public List<ToolStripMenuItem> settings(FlowLayoutPanel control)

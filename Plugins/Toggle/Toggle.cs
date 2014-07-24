@@ -51,35 +51,7 @@ namespace Toggle
 
         public FlowLayoutPanel copy(FlowLayoutPanel source_control)
         {
-            FlowLayoutPanel control = new FlowLayoutPanel();
-            Label label = new Label();
-            Padding padding = new Padding();
-            Button on_button = new Button();
-            Button off_button = new Button();
-            Tags tags = source_control.Tag as Tags;
-
-            control.Location = source_control.Location;
-            control.AutoSize = true;
-            control.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-            control.Tag = new Tags(tags);
-
-            padding.Top = 8;
-            label.Margin = padding;
-            label.AutoSize = true;
-            control.Controls.Add(label);
-            label.Text = tags["label"] + ": ";
-
-            on_button.Text = "On";
-            on_button.Size = new Size(50, 23);
-            on_button.Click += new System.EventHandler(onButton_Click);
-            control.Controls.Add(on_button);
-
-            off_button.Text = "Off";
-            off_button.Size = new Size(50, 23);
-            off_button.Click += new System.EventHandler(offButton_Click);
-            control.Controls.Add(off_button);
-
-            return control;
+            return create(source_control.Location, new Tags(source_control.Tag as Tags));
         }
 
         public void update(FlowLayoutPanel control, SafeSerialPort serial_port)

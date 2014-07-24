@@ -57,33 +57,15 @@ namespace Spinner
 
         public FlowLayoutPanel copy(FlowLayoutPanel source_control)
         {
-            FlowLayoutPanel control = new FlowLayoutPanel();
-            Label label = new Label();
             NumericUpDown spinner = new NumericUpDown();
-            Padding padding = new Padding();
             NumericUpDown source_spinner = source_control.Controls[1] as NumericUpDown;
-            Tags tags = source_control.Tag as Tags;
 
-            control.Location = source_control.Location;
-            control.AutoSize = true;
-            control.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-            control.Tag = new Tags(tags);
-
-            padding.Top = 6;
-            label.Padding = padding;
-            label.AutoSize = true;
-            control.Controls.Add(label);
-            label.Text = tags["label"] + ": ";
-
-            spinner.Size = new Size(100, 20);
             spinner.Minimum = source_spinner.Minimum;
             spinner.Maximum = source_spinner.Maximum;
             spinner.DecimalPlaces = source_spinner.DecimalPlaces;
             spinner.Increment = source_spinner.Increment;
-            spinner.ValueChanged += new System.EventHandler(spinner_ValueChanged);
-            control.Controls.Add(spinner);
 
-            return control;
+            return create(source_control.Location, spinner, new Tags(source_control.Tag as Tags));
         }
 
         public void update(FlowLayoutPanel control, SafeSerialPort serial_port)

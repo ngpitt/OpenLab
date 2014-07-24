@@ -146,7 +146,7 @@ namespace OpenLab
         private Parity parity;
         private StopBits stop_bits;
         private SafeSerialPort serial_port;
-        private bool editing = false, run = false, mouse_down = false, resizing = false;
+        private bool editing = false, running = false, resizing = false, mouse_down = false;
         private Thread update_thread;
         private delegate void CleanupDelagate();
         private CleanupDelagate cleanup_delagate;
@@ -273,6 +273,97 @@ namespace OpenLab
             control.MouseLeave += new EventHandler(control_MouseLeave);
         }
 
+        private void save()
+        {
+            HashSet<string> dependencies = new HashSet<string>();
+
+            if (file_name == null)
+            {
+                if (!saveFileDialog())
+                {
+                    return;
+                }
+            }
+
+            editing = false;
+            editToolStripMenuItem.Enabled = true;
+            connectToolStripMenuItem.Enabled = true;
+            FormBorderStyle = FormBorderStyle.FixedSingle;
+            ContextMenuStrip = null;
+            foreach (GroupBox group in get<GroupBox>(this))
+            {
+                saveGroup(group);
+                foreach (FlowLayoutPanel control in get<FlowLayoutPanel>(group))
+                {
+                    saveControl(control);
+                }
+            }
+
+            config.RemoveAll();
+
+            XmlComment comment = config.CreateComment("OpenLab Config");
+            config.AppendChild(comment);
+
+            XmlNode config_node = config.CreateElement("config");
+            config.AppendChild(config_node);
+
+            XmlNode name_node = config.CreateElement("name");
+            name_node.InnerText = Text;
+            config_node.AppendChild(name_node);
+
+            XmlNode width_node = config.CreateElement("width");
+            width_node.InnerText = Convert.ToString(Width);
+            config_node.AppendChild(width_node);
+
+            XmlNode height_node = config.CreateElement("height");
+            height_node.InnerText = Convert.ToString(Height);
+            config_node.AppendChild(height_node);
+
+            foreach (GroupBox group in get<GroupBox>(this))
+            {
+                XmlNode group_node = config.CreateElement("group");
+
+                XmlNode group_label_node = config.CreateElement("label");
+                group_label_node.InnerText = group.Text;
+                group_node.AppendChild(group_label_node);
+
+                XmlNode group_x_node = config.CreateElement("x");
+                group_x_node.InnerText = Convert.ToString(group.Location.X);
+                group_node.AppendChild(group_x_node);
+
+                XmlNode group_y_node = config.CreateElement("y");
+                group_y_node.InnerText = Convert.ToString(group.Location.Y);
+                group_node.AppendChild(group_y_node);
+
+                XmlNode group_width_node = config.CreateElement("width");
+                group_width_node.InnerText = Convert.ToString(group.Width);
+                group_node.AppendChild(group_width_node);
+
+                XmlNode group_height_node = config.CreateElement("height");
+                group_height_node.InnerText = Convert.ToString(group.Height);
+                group_node.AppendChild(group_height_node);
+
+                foreach (FlowLayoutPanel control in group.Controls)
+                {
+                    Tags tags = control.Tag as Tags;
+                    XmlDocument control_config = control_plugins[tags["plugin"]].save(control);
+                    XmlNode imported_node = config.ImportNode(control_config.DocumentElement, true);
+                    group_node.AppendChild(imported_node);
+                    dependencies.Add(tags["plugin"]);
+                }
+                config_node.AppendChild(group_node);
+            }
+
+            foreach (string plugin in dependencies)
+            {
+                XmlNode dependency_node = config.CreateElement("dependency");
+                dependency_node.InnerText = plugin;
+                config_node.InsertBefore(dependency_node, name_node);
+            }
+
+            config.Save(file_name);
+        }
+
         private void saveGroup(GroupBox group)
         {
             group.Enabled = false;
@@ -325,8 +416,8 @@ namespace OpenLab
                 }
             }
 
-            run = true;
-            while (run)
+            running = true;
+            while (running)
             {
                 stopwatch.Restart();
                 try
@@ -354,7 +445,7 @@ namespace OpenLab
 
         private void cleanup()
         {
-            run = false;
+            running = false;
             update_thread.Join();
             serial_port.Dispose();
 
@@ -408,7 +499,15 @@ namespace OpenLab
 
         private void controlForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            if (run)
+            if (editing)
+            {
+                if (MessageBox.Show("You have unsaved changes.\nDo you really want to quit?", "OpenLab", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.No)
+                {
+                    e.Cancel = true;
+                    return;
+                }
+            }
+            else if (running)
             {
                 if (MessageBox.Show("The serial port is currently connected.\nDo you really want to quit?", "OpenLab", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
                 {
@@ -542,98 +641,15 @@ namespace OpenLab
 
         private void saveToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            HashSet<string> dependencies = new HashSet<string>();
-
-            if (file_name == null)
-            {
-                if (!saveFileDialog())
-                {
-                    return;
-                }
-            }
-
-            editing = false;
-            editToolStripMenuItem.Enabled = true;
-            connectToolStripMenuItem.Enabled = true;
-            FormBorderStyle = FormBorderStyle.FixedSingle;
-            ContextMenuStrip = null;
-            foreach (GroupBox group in get<GroupBox>(this))
-            {
-                saveGroup(group);
-                foreach (FlowLayoutPanel control in get<FlowLayoutPanel>(group))
-                {
-                    saveControl(control);
-                }
-            }
-
-            config.RemoveAll();
-
-            XmlComment comment = config.CreateComment("OpenLab Config");
-            config.AppendChild(comment);
-
-            XmlNode config_node = config.CreateElement("config");
-            config.AppendChild(config_node);
-
-            XmlNode name_node = config.CreateElement("name");
-            name_node.InnerText = Text;
-            config_node.AppendChild(name_node);
-
-            XmlNode width_node = config.CreateElement("width");
-            width_node.InnerText = Convert.ToString(Width);
-            config_node.AppendChild(width_node);
-
-            XmlNode height_node = config.CreateElement("height");
-            height_node.InnerText = Convert.ToString(Height);
-            config_node.AppendChild(height_node);
-
-            foreach (GroupBox group in get<GroupBox>(this))
-            {
-                XmlNode group_node = config.CreateElement("group");
-
-                XmlNode group_label_node = config.CreateElement("label");
-                group_label_node.InnerText = group.Text;
-                group_node.AppendChild(group_label_node);
-
-                XmlNode group_x_node = config.CreateElement("x");
-                group_x_node.InnerText = Convert.ToString(group.Location.X);
-                group_node.AppendChild(group_x_node);
-
-                XmlNode group_y_node = config.CreateElement("y");
-                group_y_node.InnerText = Convert.ToString(group.Location.Y);
-                group_node.AppendChild(group_y_node);
-
-                XmlNode group_width_node = config.CreateElement("width");
-                group_width_node.InnerText = Convert.ToString(group.Width);
-                group_node.AppendChild(group_width_node);
-
-                XmlNode group_height_node = config.CreateElement("height");
-                group_height_node.InnerText = Convert.ToString(group.Height);
-                group_node.AppendChild(group_height_node);
-
-                foreach (FlowLayoutPanel control in group.Controls)
-                {
-                    Tags tags = control.Tag as Tags;
-                    XmlDocument control_config = control_plugins[tags["plugin"]].save(control);
-                    XmlNode imported_node = config.ImportNode(control_config.DocumentElement, true);
-                    group_node.AppendChild(imported_node);
-                    dependencies.Add(tags["plugin"]);
-                }
-                config_node.AppendChild(group_node);
-            }
-
-            foreach (string plugin in dependencies)
-            {
-                XmlNode dependency_node = config.CreateElement("dependency");
-                dependency_node.InnerText = plugin;
-                config_node.InsertBefore(dependency_node, name_node);
-            }
-
-            config.Save(file_name);
+            save();
         }
 
         private void saveAsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            saveFileDialog();
+            if (saveFileDialog())
+            {
+                save();
+            }
         }
 
         private void quitToolStripMenuItem_Click(object sender, EventArgs e)
