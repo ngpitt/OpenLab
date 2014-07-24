@@ -209,20 +209,6 @@ namespace OpenLab
             return controls;
         }
 
-        private void reset()
-        {
-            foreach (GroupBox group in get<GroupBox>(this))
-            {
-                Controls.Remove(group);
-            }
-            Text = "OpenLab";
-            nameToolStripMenuItem.Text = Text;
-            Width = 800;
-            Height = 600;
-            config_path = null;
-            edit();
-        }
-
         private void open(string file_name)
         {
             int x, y, width, height;
@@ -741,7 +727,15 @@ namespace OpenLab
 
         private void newToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            reset();
+            foreach (GroupBox group in get<GroupBox>(this))
+            {
+                Controls.Remove(group);
+            }
+            Text = "OpenLab";
+            nameToolStripMenuItem.Text = Text;
+            Width = 800;
+            Height = 600;
+            config_path = null;
         }
 
         private void openToolStripMenuItem_Click(object sender, EventArgs e)
@@ -1028,12 +1022,7 @@ namespace OpenLab
             group.Text = "Group";
             group.Location = control_click_location;
             group.Size = new Size(300, 100);
-            group.ContextMenuStrip = groupContextMenuStrip;
-            group.MouseMove += new MouseEventHandler(group_MouseMove);
-            group.MouseDown += new MouseEventHandler(group_MouseDown);
-            group.MouseUp += new MouseEventHandler(group_MouseUp);
-            group.MouseEnter += new EventHandler(group_MouseEnter);
-            group.MouseLeave += new EventHandler(group_MouseLeave);
+            editGroup(group);
             Controls.Add(group);
         }
 
@@ -1108,17 +1097,7 @@ namespace OpenLab
             ToolStripMenuItem menu_item = sender as ToolStripMenuItem;
             ControlPlugin control_plugin = menu_item.Tag as ControlPlugin;
             FlowLayoutPanel control = control_plugin.create(new Point(control_click_location.X, control_click_location.Y));
-            control.BorderStyle = BorderStyle.FixedSingle;
-            control.ContextMenuStrip = controlContextMenuStrip;
-            control.MouseMove += new MouseEventHandler(control_MouseMove);
-            control.MouseDown += new MouseEventHandler(control_MouseDown);
-            control.MouseUp += new MouseEventHandler(control_MouseUp);
-            control.MouseEnter += new EventHandler(control_MouseEnter);
-            control.MouseLeave += new EventHandler(control_MouseLeave);
-            foreach (Control element in control.Controls)
-            {
-                element.Enabled = false;
-            }
+            editControl(control);
             menu_source.Controls.Add(control);
         }
 
