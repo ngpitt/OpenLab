@@ -1,9 +1,10 @@
 <!--OpenLab Config-->
 <config>
+  <version>1.0</version>
   <dependency>Meter</dependency>
   <dependency>Spinner</dependency>
   <dependency>Toggle</dependency>
-  <name>OpenLab</name>
+  <name>Reactor Control</name>
   <width>320</width>
   <height>204</height>
   <group>
@@ -17,6 +18,7 @@
       <label>kV</label>
       <x>12</x>
       <y>29</y>
+      <log>yes</log>
       <get_command>12</get_command>
     </control>
     <control>
@@ -24,6 +26,7 @@
       <label>mA</label>
       <x>12</x>
       <y>64</y>
+      <log>yes</log>
       <get_command>13</get_command>
     </control>
     <control>

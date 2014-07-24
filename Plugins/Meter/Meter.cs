@@ -31,6 +31,7 @@ namespace Meter
 
             tags["label"] = name;
             tags["get_command"] = "";
+            tags["log"] = "no";
 
             return create(location, tags);
         }
@@ -43,6 +44,7 @@ namespace Meter
             x = Convert.ToInt32(config_node["x"].InnerText);
             y = Convert.ToInt32(config_node["y"].InnerText);
             tags["label"] = config_node["label"].InnerText;
+            tags["log"] = config_node["log"].InnerText;
             tags["get_command"] = config_node["get_command"].InnerText;
 
             return create(new Point(x, y), tags);
@@ -101,6 +103,10 @@ namespace Meter
             XmlNode y_node = control_config.CreateElement("y");
             y_node.InnerText = Convert.ToString(control.Location.Y);
             control_node.AppendChild(y_node);
+
+            XmlNode log_node = control_config.CreateElement("log");
+            log_node.InnerText = tags["log"];
+            control_node.AppendChild(log_node);
 
             XmlNode get_command_node = control_config.CreateElement("get_command");
             get_command_node.InnerText = tags["get_command"];

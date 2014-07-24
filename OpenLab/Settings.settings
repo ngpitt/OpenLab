@@ -18,13 +18,13 @@
       <Value Profile="(Default)">One</Value>
     </Setting>
     <Setting Name="read_timeout" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">500</Value>
+      <Value Profile="(Default)">1000</Value>
     </Setting>
     <Setting Name="write_timeout" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">500</Value>
+      <Value Profile="(Default)">1000</Value>
     </Setting>
     <Setting Name="update_interval" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">500</Value>
+      <Value Profile="(Default)">1000</Value>
     </Setting>
   </Settings>
 </SettingsFile>

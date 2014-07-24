@@ -34,12 +34,14 @@ namespace OpenLab
             disconnectToolStripMenuItem.Enabled = false;
 
             config = new XmlDocument();
-            load_file_dialog = new OpenFileDialog();
-            save_file_dialog = new SaveFileDialog();
+            open_config_dialog = new OpenFileDialog();
+            save_config_dialog = new SaveFileDialog();
+            save_log_dialog = new SaveFileDialog();
             cleanup_delagate = new CleanupDelagate(cleanup);
             control_plugins = new Dictionary<string, ControlPlugin>();
+            logging_plugins = new Dictionary<int, LoggingPlugin>();
 
-            load_file_dialog.Filter = save_file_dialog.Filter = "OpenLab Config (*.olc)|*.olc";
+            open_config_dialog.Filter = save_config_dialog.Filter = "OpenLab Config (*.olc)|*.olc";
             portNameToolStripComboBox.Text = port_name = Settings.Default.port_name;
             baud_rate = Settings.Default.baud_rate;
             baudRateToolStripTextBox.Text = Convert.ToString(baud_rate);
@@ -85,14 +87,51 @@ namespace OpenLab
             updateIntervalToolStripTextBox.Text = Convert.ToString(update_interval);
 
             string binary_directory = Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]);
-
-            ICollection<ControlPlugin> control_plugin_collection = PluginLoader<ControlPlugin>.LoadPlugins(binary_directory + "\\Plugins", this);
+            ICollection<ControlPlugin> control_plugin_collection;
+            try
+            {
+                control_plugin_collection = PluginLoader<ControlPlugin>.LoadPlugins(binary_directory + "\\Plugins", this);
+            }
+            catch
+            {
+                MessageBox.Show("Error loading control plugin.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
             if (control_plugin_collection != null)
             {
                 foreach (ControlPlugin control_plugin in control_plugin_collection)
                 {
                     control_plugins.Add(control_plugin.name, control_plugin);
                 }
+            }
+
+            ICollection<LoggingPlugin> logging_plugin_collection;
+            try
+            {
+                logging_plugin_collection = PluginLoader<LoggingPlugin>.LoadPlugins(binary_directory + "\\Plugins", this);
+            }
+            catch
+            {
+                MessageBox.Show("Error loading logging plugin.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+            if (logging_plugin_collection != null)
+            {
+                int index = 1;
+                foreach (LoggingPlugin logging_plugin in logging_plugin_collection)
+                {
+                    logging_plugins.Add(index, logging_plugin);
+                    if (save_log_dialog.Filter != "")
+                    {
+                        save_log_dialog.Filter += "|";
+                    }
+                    save_log_dialog.Filter += logging_plugin.name + " (*." + logging_plugin.extension + ")|*." + logging_plugin.extension;
+                    index++;
+                }
+            }
+            if (logging_plugins.Count > 0)
+            {
+                loggingToolStripMenuItem.Enabled = true;
             }
 
             ToolStripMenuItem group_label = new ToolStripMenuItem();
@@ -138,10 +177,11 @@ namespace OpenLab
         }
 
         private Dictionary<string, ControlPlugin> control_plugins;
+        private Dictionary<int, LoggingPlugin> logging_plugins;
         private XmlDocument config;
-        private OpenFileDialog load_file_dialog;
-        private SaveFileDialog save_file_dialog;
-        private string port_name, file_name;
+        private OpenFileDialog open_config_dialog;
+        private SaveFileDialog save_config_dialog, save_log_dialog;
+        private string version = "1.0", port_name, config_path = null, log_path = null;
         private int baud_rate, data_bits, update_interval, read_timeout, write_timeout;
         private Parity parity;
         private StopBits stop_bits;
@@ -169,64 +209,87 @@ namespace OpenLab
             return controls;
         }
 
+        private void reset()
+        {
+            foreach (GroupBox group in get<GroupBox>(this))
+            {
+                Controls.Remove(group);
+            }
+            Text = "OpenLab";
+            nameToolStripMenuItem.Text = Text;
+            Width = 800;
+            Height = 600;
+            config_path = null;
+            edit();
+        }
+
         private void open(string file_name)
         {
             int x, y, width, height;
 
-            this.file_name = file_name;
-            config.Load(file_name);
+            this.config_path = file_name;
 
-            XmlNodeList dependency_nodes = config["config"].GetElementsByTagName("dependency");
-            foreach (XmlNode dependency_node in dependency_nodes)
+            try
             {
-                if (!control_plugins.ContainsKey(dependency_node.InnerText))
+                config.Load(file_name);
+
+                XmlNodeList dependency_nodes = config["config"].GetElementsByTagName("dependency");
+                foreach (XmlNode dependency_node in dependency_nodes)
                 {
-                    MessageBox.Show("This config requires the plugin \"" + dependency_node.InnerText + "\".", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
+                    if (!control_plugins.ContainsKey(dependency_node.InnerText))
+                    {
+                        MessageBox.Show("This config requires the plugin \"" + dependency_node.InnerText + "\".", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
                 }
-            }
 
-            if (!editing)
-            {
-                Text = config["config"]["name"].InnerText;
-                Width = Convert.ToInt32(config["config"]["width"].InnerText);
-                Height = Convert.ToInt32(config["config"]["height"].InnerText);
-            }
-
-            XmlNodeList group_nodes = config["config"].GetElementsByTagName("group");
-            foreach (XmlNode group_node in group_nodes)
-            {
-                GroupBox group = new GroupBox();
-
-                x = Convert.ToInt32(group_node["x"].InnerText);
-                y = Convert.ToInt32(group_node["y"].InnerText);
-                width = Convert.ToInt32(group_node["width"].InnerText);
-                height = Convert.ToInt32(group_node["height"].InnerText);
-
-                group.Text = group_node["label"].InnerText;
-                group.Location = new Point(x, y);
-                group.Size = new Size(width, height);
-                if (editing)
+                if (!editing)
                 {
-                    editGroup(group);
+                    Text = config["config"]["name"].InnerText;
+                    nameToolStripMenuItem.Text = Text;
+                    Width = Convert.ToInt32(config["config"]["width"].InnerText);
+                    Height = Convert.ToInt32(config["config"]["height"].InnerText);
                 }
-                else
-                {
-                    group.Enabled = false;
-                }
-                Controls.Add(group);
 
-                XmlElement group_element = group_node as XmlElement;
-                XmlNodeList control_nodes = group_element.GetElementsByTagName("control");
-                foreach (XmlNode control_node in control_nodes)
+                XmlNodeList group_nodes = config["config"].GetElementsByTagName("group");
+                foreach (XmlNode group_node in group_nodes)
                 {
-                    FlowLayoutPanel control = control_plugins[control_node["plugin"].InnerText].create(control_node);
+                    GroupBox group = new GroupBox();
+
+                    x = Convert.ToInt32(group_node["x"].InnerText);
+                    y = Convert.ToInt32(group_node["y"].InnerText);
+                    width = Convert.ToInt32(group_node["width"].InnerText);
+                    height = Convert.ToInt32(group_node["height"].InnerText);
+
+                    group.Text = group_node["label"].InnerText;
+                    group.Location = new Point(x, y);
+                    group.Size = new Size(width, height);
                     if (editing)
                     {
-                        editControl(control);
+                        editGroup(group);
                     }
-                    group.Controls.Add(control);
+                    else
+                    {
+                        group.Enabled = false;
+                    }
+                    Controls.Add(group);
+
+                    XmlElement group_element = group_node as XmlElement;
+                    XmlNodeList control_nodes = group_element.GetElementsByTagName("control");
+                    foreach (XmlNode control_node in control_nodes)
+                    {
+                        FlowLayoutPanel control = control_plugins[control_node["plugin"].InnerText].create(control_node);
+                        if (editing)
+                        {
+                            editControl(control);
+                        }
+                        group.Controls.Add(control);
+                    }
                 }
+            }
+            catch
+            {
+                MessageBox.Show("Error opening config file.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -277,9 +340,9 @@ namespace OpenLab
         {
             HashSet<string> dependencies = new HashSet<string>();
 
-            if (file_name == null)
+            if (config_path == null)
             {
-                if (!saveFileDialog())
+                if (!saveConfigDialog())
                 {
                     return;
                 }
@@ -306,6 +369,10 @@ namespace OpenLab
 
             XmlNode config_node = config.CreateElement("config");
             config.AppendChild(config_node);
+
+            XmlNode version_node = config.CreateElement("version");
+            version_node.InnerText = version;
+            config_node.AppendChild(version_node);
 
             XmlNode name_node = config.CreateElement("name");
             name_node.InnerText = Text;
@@ -361,7 +428,14 @@ namespace OpenLab
                 config_node.InsertBefore(dependency_node, name_node);
             }
 
-            config.Save(file_name);
+            try
+            {
+                config.Save(config_path);
+            }
+            catch
+            {
+                MessageBox.Show("Error saving config file.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void saveGroup(GroupBox group)
@@ -390,13 +464,13 @@ namespace OpenLab
             control.MouseLeave -= new EventHandler(control_MouseLeave);
         }
 
-        private bool saveFileDialog()
+        private bool saveConfigDialog()
         {
-            if (save_file_dialog.ShowDialog() == DialogResult.Cancel)
+            if (save_config_dialog.ShowDialog() == DialogResult.Cancel)
             {
                 return false;
             }
-            file_name = save_file_dialog.FileName;
+            config_path = save_config_dialog.FileName;
 
             return true;
         }
@@ -406,6 +480,7 @@ namespace OpenLab
             long sleep;
             ulong time = 0;
             List<FlowLayoutPanel> controls = new List<FlowLayoutPanel>();
+            List<string> values = new List<string>();
             Stopwatch stopwatch = new Stopwatch();
 
             foreach (GroupBox group in get<GroupBox>(this))
@@ -420,19 +495,41 @@ namespace OpenLab
             while (running)
             {
                 stopwatch.Restart();
-                try
+                values.Clear();
+                values.Add(Convert.ToString(time));
+                foreach (FlowLayoutPanel control in controls)
                 {
-                    foreach (FlowLayoutPanel control in controls)
+                    Tags tags = control.Tag as Tags;
+                    try
                     {
-                        Tags tags = control.Tag as Tags;
                         control_plugins[tags["plugin"]].update(control, serial_port);
                     }
+                    catch
+                    {
+                        MessageBox.Show("Serial port disconnected.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        BeginInvoke(cleanup_delagate);
+                        return;
+                    }
+                    if (tags.ContainsKey("log"))
+                    {
+                        if (tags["log"] == "yes")
+                        {
+                            values.Add(tags["value"].TrimEnd('\r', '\n'));
+                        }
+                    }
                 }
-                catch
+                if (log_path != null)
                 {
-                    MessageBox.Show("Serial port disconnected.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    BeginInvoke(cleanup_delagate);
-                    return;
+                    try
+                    {
+                        logging_plugins[save_log_dialog.FilterIndex].update(values);
+                    }
+                    catch
+                    {
+                        MessageBox.Show("Error writing to log file.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        BeginInvoke(cleanup_delagate);
+                        return;
+                    }
                 }
                 time += (ulong)update_interval;
                 sleep = update_interval - stopwatch.ElapsedMilliseconds;
@@ -448,15 +545,29 @@ namespace OpenLab
             running = false;
             update_thread.Join();
             serial_port.Dispose();
+            if (log_path != null)
+            {
+                try
+                {
+                    logging_plugins[save_log_dialog.FilterIndex].save();
+                }
+                catch
+                {
+                    MessageBox.Show("Error writing to log file.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                log_path = null;
+            }
 
             newToolStripMenuItem.Enabled = true;
             openToolStripMenuItem.Enabled = true;
             editToolStripMenuItem.Enabled = true;
             saveToolStripMenuItem.Enabled = true;
-            saveAsToolStripMenuItem.Enabled = true;
-            settingsToolStripMenuItem.Enabled = true;
+            saveConfigAsToolStripMenuItem.Enabled = true;
             connectToolStripMenuItem.Enabled = true;
             disconnectToolStripMenuItem.Enabled = false;
+            settingsToolStripMenuItem.Enabled = true;
+            loggingToolStripMenuItem.Enabled = true;
+            saveLogAsToolStripMenuItem.Enabled = true;
             foreach (GroupBox group in get<GroupBox>(this))
             {
                 group.Enabled = false;
@@ -474,6 +585,7 @@ namespace OpenLab
         {
             ToolStripMenuItem control_title = new ToolStripMenuItem();
             ToolStripTextBox text_box = new ToolStripTextBox();
+            ToolStripMenuItem log_value = null;
             ToolStripMenuItem remove_control = new ToolStripMenuItem();
             menu_source = (sender as ContextMenuStrip).SourceControl;
             Tags tags = menu_source.Tag as Tags;
@@ -486,6 +598,17 @@ namespace OpenLab
             control_title.Text = "Label";
             control_title.DropDownItems.Add(text_box);
 
+            if (tags.ContainsKey("log") && logging_plugins.Count > 0)
+            {
+                log_value = new ToolStripMenuItem();
+                log_value.Text = "Log Value";
+                log_value.Click += new EventHandler(logValueToolStripTextBox_Click);
+                if (tags["log"] == "yes")
+                {
+                    log_value.Checked = true;
+                }
+            }
+
             remove_control.Text = "Remove";
             remove_control.Click += new EventHandler(removeControlToolStripMenuItem_Click);
 
@@ -493,6 +616,10 @@ namespace OpenLab
             foreach (ToolStripMenuItem menu_item in control_plugins[tags["plugin"]].settings(menu_source as FlowLayoutPanel))
             {
                 controlContextMenuStrip.Items.Add(menu_item);
+            }
+            if (log_value != null)
+            {
+                controlContextMenuStrip.Items.Add(log_value);
             }
             controlContextMenuStrip.Items.Add(remove_control);
         }
@@ -614,24 +741,16 @@ namespace OpenLab
 
         private void newToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            foreach (GroupBox group in get<GroupBox>(this))
-            {
-                Controls.Remove(group);
-            }
-            Text = "OpenLab";
-            Width = 800;
-            Height = 600;
-            file_name = null;
-            edit();
+            reset();
         }
 
         private void openToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (load_file_dialog.ShowDialog() == DialogResult.Cancel)
+            if (open_config_dialog.ShowDialog() == DialogResult.Cancel)
             {
                 return;
             }
-            open(load_file_dialog.FileName);
+            open(open_config_dialog.FileName);
         }
 
         private void editToolStripMenuItem_Click(object sender, EventArgs e)
@@ -644,9 +763,9 @@ namespace OpenLab
             save();
         }
 
-        private void saveAsToolStripMenuItem_Click(object sender, EventArgs e)
+        private void saveConfigAsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (saveFileDialog())
+            if (saveConfigDialog())
             {
                 save();
             }
@@ -675,8 +794,38 @@ namespace OpenLab
             }
             catch
             {
-                MessageBox.Show("Unable to open serial device.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Error opening serial device.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
+            }
+
+            if (log_path != null)
+            {
+                List<string> fields = new List<string>();
+                List<string> filters = save_log_dialog.Tag as List<string>;
+
+                fields.Add("time");
+                foreach (GroupBox group in get<GroupBox>(this))
+                {
+                    foreach (FlowLayoutPanel control in get<FlowLayoutPanel>(group))
+                    {
+                        Tags tags = control.Tag as Tags;
+                        if (tags.ContainsKey("log"))
+                        {
+                            if (tags["log"] == "yes")
+                            {
+                                fields.Add(tags["label"]);
+                            }
+                        }
+                    }
+                }
+                try
+                {
+                    logging_plugins[save_log_dialog.FilterIndex].setup(log_path, fields);
+                }
+                catch
+                {
+                    MessageBox.Show("Error creating log file.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
 
             update_thread = new Thread(update);
@@ -686,10 +835,12 @@ namespace OpenLab
             openToolStripMenuItem.Enabled = false;
             editToolStripMenuItem.Enabled = false;
             saveToolStripMenuItem.Enabled = false;
-            saveAsToolStripMenuItem.Enabled = false;
+            saveConfigAsToolStripMenuItem.Enabled = false;
             connectToolStripMenuItem.Enabled = false;
             disconnectToolStripMenuItem.Enabled = true;
             settingsToolStripMenuItem.Enabled = false;
+            loggingToolStripMenuItem.Enabled = false;
+            saveLogAsToolStripMenuItem.Enabled = false;
             foreach (GroupBox group in get<GroupBox>(this))
             {
                 group.Enabled = true;
@@ -815,15 +966,45 @@ namespace OpenLab
             }
         }
 
+
+        private void saveLogAsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (save_log_dialog.ShowDialog() == DialogResult.Cancel)
+            {
+                return;
+            }
+            log_path = save_log_dialog.FileName;
+        }
+
         private void aboutToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            string message = "OpenLab - Open Source Lab Equipment Control Software\nVersion 1.0\n\n";
+            string message = "OpenLab (Version " + version + ") - Open Source Lab Equipment Control Software\n\n";
 
-            message += "Control Plugins:\n";
-            foreach (string plugin_name in control_plugins.Keys)
+            message += "Control Plugins:\n\n";
+            if (control_plugins.Count == 0)
             {
-                message += "    \u2022  " + plugin_name + "\n";
+                message += "\t(none)\n";
             }
+            else
+            {
+                foreach (string plugin_name in control_plugins.Keys)
+                {
+                    message += "    \u2022  " + plugin_name + "\n";
+                }
+            }
+            message += "\nLogging Plugins:\n\n";
+            if (logging_plugins.Count == 0)
+            {
+                message += "        (none)\n";
+            }
+            else
+            {
+                foreach (LoggingPlugin plugin in logging_plugins.Values)
+                {
+                    message += "    \u2022  " + plugin.name + "\n";
+                }
+            }
+
             MessageBox.Show(message, "OpenLab");
         }
 
@@ -996,6 +1177,23 @@ namespace OpenLab
                 Tags tags = control.Tag as Tags;
                 tags["label"] = text_box.Text;
                 control.Controls[0].Text = text_box.Text + ": ";
+            }
+        }
+
+        private void logValueToolStripTextBox_Click(object sender, EventArgs e)
+        {
+            FlowLayoutPanel control = menu_source as FlowLayoutPanel;
+            Tags tags = control.Tag as Tags;
+            ToolStripMenuItem menu_item = sender as ToolStripMenuItem;
+            if (tags["log"] == "yes")
+            {
+                tags["log"] = "no";
+                menu_item.Checked = false;
+            }
+            else
+            {
+                tags["log"] = "yes";
+                menu_item.Checked = true;
             }
         }
 
