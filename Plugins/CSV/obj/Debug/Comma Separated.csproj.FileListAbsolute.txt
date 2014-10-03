@@ -1,7 +1,0 @@
-C:\cygwin64\home\ngpitt\OpenLab\Plugins\Comma Separated\bin\Debug\Comma Separated.dll
-C:\cygwin64\home\ngpitt\OpenLab\Plugins\Comma Separated\bin\Debug\Comma Separated.pdb
-C:\cygwin64\home\ngpitt\OpenLab\Plugins\Comma Separated\bin\Debug\OpenLab.exe
-C:\cygwin64\home\ngpitt\OpenLab\Plugins\Comma Separated\bin\Debug\OpenLab.pdb
-C:\cygwin64\home\ngpitt\OpenLab\Plugins\Comma Separated\obj\Debug\Comma Separated.csprojResolveAssemblyReference.cache
-C:\cygwin64\home\ngpitt\OpenLab\Plugins\Comma Separated\obj\Debug\Comma Separated.dll
-C:\cygwin64\home\ngpitt\OpenLab\Plugins\Comma Separated\obj\Debug\Comma Separated.pdb

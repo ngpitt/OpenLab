@@ -1,7 +1,0 @@
-C:\cygwin64\home\ngpitt\OpenLab\Plugins\Toggle\bin\Debug\Toggle.dll
-C:\cygwin64\home\ngpitt\OpenLab\Plugins\Toggle\bin\Debug\Toggle.pdb
-C:\cygwin64\home\ngpitt\OpenLab\Plugins\Toggle\bin\Debug\OpenLab.exe
-C:\cygwin64\home\ngpitt\OpenLab\Plugins\Toggle\bin\Debug\OpenLab.pdb
-C:\cygwin64\home\ngpitt\OpenLab\Plugins\Toggle\obj\Debug\Toggle.csprojResolveAssemblyReference.cache
-C:\cygwin64\home\ngpitt\OpenLab\Plugins\Toggle\obj\Debug\Toggle.dll
-C:\cygwin64\home\ngpitt\OpenLab\Plugins\Toggle\obj\Debug\Toggle.pdb

@@ -1,7 +1,0 @@
-C:\cygwin64\home\ngpitt\OpenLab\Plugins\CSV\bin\Debug\CSV.dll
-C:\cygwin64\home\ngpitt\OpenLab\Plugins\CSV\bin\Debug\CSV.pdb
-C:\cygwin64\home\ngpitt\OpenLab\Plugins\CSV\bin\Debug\OpenLab.exe
-C:\cygwin64\home\ngpitt\OpenLab\Plugins\CSV\bin\Debug\OpenLab.pdb
-C:\cygwin64\home\ngpitt\OpenLab\Plugins\CSV\obj\Debug\CSV.csprojResolveAssemblyReference.cache
-C:\cygwin64\home\ngpitt\OpenLab\Plugins\CSV\obj\Debug\CSV.dll
-C:\cygwin64\home\ngpitt\OpenLab\Plugins\CSV\obj\Debug\CSV.pdb

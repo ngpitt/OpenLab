@@ -1,7 +1,0 @@
-C:\cygwin64\home\ngpitt\OpenLab\Plugins\Meter\bin\Debug\Meter.dll
-C:\cygwin64\home\ngpitt\OpenLab\Plugins\Meter\bin\Debug\Meter.pdb
-C:\cygwin64\home\ngpitt\OpenLab\Plugins\Meter\bin\Debug\OpenLab.exe
-C:\cygwin64\home\ngpitt\OpenLab\Plugins\Meter\bin\Debug\OpenLab.pdb
-C:\cygwin64\home\ngpitt\OpenLab\Plugins\Meter\obj\Debug\Meter.csprojResolveAssemblyReference.cache
-C:\cygwin64\home\ngpitt\OpenLab\Plugins\Meter\obj\Debug\Meter.dll
-C:\cygwin64\home\ngpitt\OpenLab\Plugins\Meter\obj\Debug\Meter.pdb
