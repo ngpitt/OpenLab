@@ -1,71 +1,42 @@
-﻿using System;
-using System.IO;
-using System.Windows.Forms;
+﻿using System.IO;
+using System.Reflection;
 using System.Collections.Generic;
 using OpenLab;
 
 namespace CSV
 {
-    public class CSV : LoggingPlugin
+    public class CSV : ILoggingPlugin
     {
-        public CSV(ControlForm control_form)
-        {
-            this.control_form = control_form;
-        }
-
-        public string name
+        public string Extension
         {
             get
             {
-                return "CSV";
+                return ".csv";
             }
         }
 
-        public string extension
+        public void Open(string LogPath, IEnumerable<string> Fields)
         {
-            get
-            {
-                return "csv";
-            }
+            LogFile = new StreamWriter(LogPath);
+
+            WriteLine(Fields);
         }
 
-        public void setup(string log_path, List<string> fields)
+        public void Write(IEnumerable<string> Values)
         {
-            log_file = new StreamWriter(log_path);
-            for (int i = 0; i < fields.Count; i++)
-            {
-                if (i == fields.Count - 1)
-                {
-                    log_file.Write(fields[i] + "\n");
-                }
-                else
-                {
-                    log_file.Write(fields[i] + ",");
-                }
-            }
+            WriteLine(Values);
         }
 
-        public void update(List<string> values)
+        public void Close() 
         {
-            for (int i = 0; i < values.Count; i++)
-            {
-                if (i == values.Count - 1)
-                {
-                    log_file.Write(values[i] + "\n");
-                }
-                else
-                {
-                    log_file.Write(values[i] + ",");
-                }
-            }
+            LogFile.Dispose();
         }
 
-        public void save() 
-        {
-            log_file.Dispose();
-        }
+        private StreamWriter LogFile;
 
-        private ControlForm control_form;
-        private StreamWriter log_file;
+        private void WriteLine(IEnumerable<string> Values)
+        {
+            LogFile.Write(string.Format("{0}\n", string.Join(",", Values)));
+        }
     }
 }

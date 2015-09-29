@@ -1,6 +1,6 @@
 ﻿using System;
 using System.IO;
-using System.Xml;
+using System.Linq;
 using System.Drawing;
 using System.IO.Ports;
 using System.Threading;
@@ -8,517 +8,437 @@ using System.Diagnostics;
 using System.Windows.Forms;
 using System.ComponentModel;
 using System.Collections.Generic;
-using Tags = System.Collections.Generic.Dictionary<string, string>;
+using System.Xml.Linq;
+using System.Reflection;
 
 namespace OpenLab
 {
     public partial class ControlForm : Form
     {
-        public Control menuSource
-        {
-            get
-            {
-                return menu_source;
-            }
-        }
+        private List<IControlPlugin> ControlPlugins = new List<IControlPlugin>();
+        private List<ILoggingPlugin> LoggingPlugins = new List<ILoggingPlugin>();
+        private SerialPort SerialPort = new SerialPort();
+        private int UpdateInterval;
+        private OpenFileDialog OpenConfigDialog = new OpenFileDialog();
+        private SaveFileDialog SaveConfigDialog = new SaveFileDialog(), SaveLogDialog = new SaveFileDialog();
+        private BackgroundWorker UpdateBackgroundWorker = new BackgroundWorker();
+        private Point ContextMenuLocation;
+
+        private ToolStripMenuItem ConfigMenuItem = new ToolStripMenuItem("Config");
+        private ToolStripMenuItem NewConfigMenuItem = new ToolStripMenuItem("New");
+        private ToolStripMenuItem OpenConfigMenuItem = new ToolStripMenuItem("Open...");
+        private ToolStripMenuItem EditConfigMenuItem = new ToolStripMenuItem("Edit");
+        private ToolStripMenuItem SaveConfigMenuItem = new ToolStripMenuItem("Save");
+        private ToolStripMenuItem SaveConfigAsMenuItem = new ToolStripMenuItem("Save As...");
+        private ToolStripMenuItem QuitMenuItem = new ToolStripMenuItem("Quit");
+
+        private ToolStripMenuItem SerialMenuItem = new ToolStripMenuItem("Serial");
+        private ToolStripMenuItem ConnectMenuItem = new ToolStripMenuItem("Connect");
+        private ToolStripMenuItem DisconnectMenuItem = new ToolStripMenuItem("Disconnect");
+        private ToolStripMenuItem PortNameMenuItem = new ToolStripMenuItem("Port Name");
+        private ToolStripComboBox PortNameComboBox = new ToolStripComboBox("Port Name");
+        private ToolStripMenuItem BaudRateMenuItem = new ToolStripMenuItem("Baud Rate");
+        private ToolStripTextBox BaudRateTextBox = new ToolStripTextBox("Baud Rate");
+        private ToolStripMenuItem ParityMenuItem = new ToolStripMenuItem("Parity");
+        private ToolStripComboBox ParityComboBox = new ToolStripComboBox("Parity");
+        private ToolStripMenuItem DataBitsMenuItem = new ToolStripMenuItem("Data Bits");
+        private ToolStripTextBox DataBitsTextBox = new ToolStripTextBox("Data Bits");
+        private ToolStripMenuItem StopBitsMenuItem = new ToolStripMenuItem("Stop Bits");
+        private ToolStripComboBox StopBitsComboBox = new ToolStripComboBox("Stop Bits");
+        private ToolStripMenuItem ReadTimeoutMenuItem = new ToolStripMenuItem("Read Timeout");
+        private ToolStripTextBox ReadTimeoutTextBox = new ToolStripTextBox("Read Timeout");
+        private ToolStripMenuItem WriteTimeoutMenuItem = new ToolStripMenuItem("Write Timeout");
+        private ToolStripTextBox WriteTimeoutTextBox = new ToolStripTextBox("Write Timeout");
+        private ToolStripMenuItem UpdateIntervalMenuItem = new ToolStripMenuItem("Update Interval");
+        private ToolStripTextBox UpdateIntervalTextBox = new ToolStripTextBox("Update Interval");
+
+        private ToolStripMenuItem LoggingMenuItem = new ToolStripMenuItem("Logging");
+        private ToolStripMenuItem SaveLogAsMenuItem = new ToolStripMenuItem("Save As...");
+
+        private ToolStripMenuItem AddControlMenuItem = new ToolStripMenuItem("Add Control");
+
+        private ToolStripMenuItem FormLabelMenuItem = new ToolStripMenuItem("Form Label");
+        private ToolStripTextBox FormLabelTextBox = new ToolStripTextBox("Form Label");
+        private ToolStripMenuItem AddGroupMenuItem = new ToolStripMenuItem("Add Group");
 
         public ControlForm()
         {
-            InitializeComponent();
-
-            FormClosing += new FormClosingEventHandler(controlForm_FormClosing);
-            KeyDown += new KeyEventHandler(controlForm_KeyDown);
-            groupContextMenuStrip.Opening += groupContextMenuStrip_Opening;
-            controlContextMenuStrip.Opening += controlContextMenuStrip_Opening;
+            Text = "OpenLab";
+            Width = 800;
+            Height = 600;
+            FormClosing += new FormClosingEventHandler(ControlForm_FormClosing);
             FormBorderStyle = FormBorderStyle.FixedSingle;
-            disconnectToolStripMenuItem.Enabled = false;
+            MinimizeBox = false;
+            MaximizeBox = false;
 
-            config = new XmlDocument();
-            open_config_dialog = new OpenFileDialog();
-            save_config_dialog = new SaveFileDialog();
-            save_log_dialog = new SaveFileDialog();
-            cleanup_delagate = new CleanupDelagate(cleanup);
-            control_plugins = new Dictionary<string, ControlPlugin>();
-            logging_plugins = new Dictionary<int, LoggingPlugin>();
+            MainMenuStrip = new MenuStrip();
+            Controls.Add(MainMenuStrip);
 
-            open_config_dialog.Filter = save_config_dialog.Filter = "OpenLab Config (*.olc)|*.olc";
-            portNameToolStripComboBox.Text = port_name = Settings.Default.port_name;
-            baud_rate = Settings.Default.baud_rate;
-            baudRateToolStripTextBox.Text = Convert.ToString(baud_rate);
-            parity = Settings.Default.parity;
-            switch (parity)
+            NewConfigMenuItem.Click += new EventHandler(NewFileMenuItem_Click);
+            OpenConfigMenuItem.Click += new EventHandler(OpenFileMenuItem_Click);
+            EditConfigMenuItem.Click += new EventHandler(EditFileMenuItem_Click);
+            SaveConfigMenuItem.Click += new EventHandler(SaveFileMenuItem_Click);
+            SaveConfigAsMenuItem.Click += new EventHandler(SaveConfigAsMenuItem_Click);
+            QuitMenuItem.Click += new EventHandler(QuitMenuItem_Click);
+
+            ConnectMenuItem.Click += new EventHandler(ConnectMenuItem_Click);
+            DisconnectMenuItem.Click += new EventHandler(DisconnectMenuItem_Click);
+            PortNameMenuItem.DropDownItems.Add(PortNameComboBox);
+            PortNameComboBox.SelectedIndexChanged += new EventHandler(PortNameComboBox_SelectedIndexChanged);
+            BaudRateMenuItem.DropDownItems.Add(BaudRateTextBox);
+            BaudRateTextBox.TextChanged += new EventHandler(BaudRateTextBox_TextChanged);
+            ParityMenuItem.DropDownItems.Add(ParityComboBox);
+            ParityComboBox.SelectedIndexChanged += new EventHandler(ParityComboBox_SelectedIndexChanged);
+            DataBitsMenuItem.DropDownItems.Add(DataBitsTextBox);
+            DataBitsTextBox.TextChanged += new EventHandler(DataBitsTextBox_TextChanged);
+            StopBitsMenuItem.DropDownItems.Add(StopBitsComboBox);
+            StopBitsComboBox.SelectedIndexChanged += new EventHandler(StopBitsComboBox_SelectedIndexChanged);
+            ReadTimeoutMenuItem.DropDownItems.Add(ReadTimeoutTextBox);
+            ReadTimeoutTextBox.TextChanged += new EventHandler(ReadTimeoutTextBox_TextChanged);
+            WriteTimeoutMenuItem.DropDownItems.Add(WriteTimeoutTextBox);
+            WriteTimeoutTextBox.TextChanged += new EventHandler(WriteTimeoutTextBox_TextChanged);
+            UpdateIntervalMenuItem.DropDownItems.Add(UpdateIntervalTextBox);
+            UpdateIntervalTextBox.TextChanged += new EventHandler(UpdateIntervalMenuItem_TextChanged);
+
+            SaveLogAsMenuItem.Click += new EventHandler(SaveLogAsMenuItem_Click);
+
+            ConfigMenuItem.DropDownItems.AddRange(new ToolStripItem[]
             {
-                case Parity.Even:
-                    parityToolStripComboBox.SelectedIndex = 0;
-                    break;
-                case Parity.Mark:
-                    parityToolStripComboBox.SelectedIndex = 1;
-                    break;
-                case Parity.None:
-                    parityToolStripComboBox.SelectedIndex = 2;
-                    break;
-                case Parity.Odd:
-                    parityToolStripComboBox.SelectedIndex = 3;
-                    break;
-                case Parity.Space:
-                    parityToolStripComboBox.SelectedIndex = 4;
-                    break;
-            }
-            data_bits = Settings.Default.data_bits;
-            dataBitsToolStripTextBox.Text = Convert.ToString(data_bits);
-            stop_bits = Settings.Default.stop_bits;
-            switch (stop_bits)
-            {
-                case StopBits.One:
-                    stopBitsToolStripComboBox.SelectedIndex = 0;
-                    break;
-                case StopBits.OnePointFive:
-                    stopBitsToolStripComboBox.SelectedIndex = 1;
-                    break;
-                case StopBits.Two:
-                    stopBitsToolStripComboBox.SelectedIndex = 2;
-                    break;
-            }
-            read_timeout = Settings.Default.read_timeout;
-            readTimeoutToolStripTextBox.Text = Convert.ToString(read_timeout);
-            write_timeout = Settings.Default.write_timeout;
-            writeTimeoutToolStripTextBox.Text = Convert.ToString(write_timeout);
-            update_interval = Settings.Default.update_interval;
-            updateIntervalToolStripTextBox.Text = Convert.ToString(update_interval);
+                NewConfigMenuItem,
+                OpenConfigMenuItem,
+                EditConfigMenuItem,
+                SaveConfigMenuItem,
+                SaveConfigAsMenuItem,
+                new ToolStripSeparator(),
+                QuitMenuItem
+            });
 
-            string binary_directory = Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]);
-            ICollection<ControlPlugin> control_plugin_collection;
+            SerialMenuItem.DropDownOpening += new EventHandler(SerialMenuItem_DropDownOpening);
+            SerialMenuItem.DropDownItems.AddRange(new ToolStripItem[]
+            {
+                ConnectMenuItem,
+                DisconnectMenuItem,
+                new ToolStripSeparator(),
+                PortNameMenuItem,
+                BaudRateMenuItem,
+                ParityMenuItem,
+                DataBitsMenuItem,
+                StopBitsMenuItem,
+                ReadTimeoutMenuItem,
+                WriteTimeoutMenuItem,
+                UpdateIntervalMenuItem
+            });
+
+            LoggingMenuItem.DropDownItems.Add(SaveLogAsMenuItem);
+
+            MainMenuStrip.Items.AddRange(new ToolStripItem[]
+            {
+                ConfigMenuItem,
+                SerialMenuItem,
+                LoggingMenuItem
+            });
+
+            ContextMenuStrip = new ContextMenuStrip();
+            ContextMenuStrip.Opening += new CancelEventHandler(ContextMenuStrip_Opening);
+
+            ContextMenuStrip.Items.AddRange(new ToolStripItem[]
+            {
+                FormLabelMenuItem,
+                AddGroupMenuItem
+            });
+
+            FormLabelMenuItem.DropDownItems.Add(FormLabelTextBox);
+            FormLabelTextBox.TextChanged += new EventHandler(FormLabelTextBox_TextChanged);
+            AddGroupMenuItem.Click += new EventHandler(AddGroupMenuItem_Click);
+
+            OpenConfigDialog.Filter = string.Format("{0} (*{1})|*{1}", GetType().Assembly.GetName().Name, ".olc");
+            SaveConfigDialog.Filter = OpenConfigDialog.Filter;
+
+            SaveConfigMenuItem.Enabled = false;
+            SaveConfigAsMenuItem.Enabled = false;
+            DisconnectMenuItem.Enabled = false;
+            ContextMenuStrip.Enabled = false;
+
+            SerialPort.PortName = Settings.Default.PortName;
+            SerialPort.BaudRate = Settings.Default.BaudRate;
+            SerialPort.Parity = Settings.Default.Parity;
+            SerialPort.DataBits = Settings.Default.DataBits;
+            SerialPort.StopBits = Settings.Default.StopBits;
+            SerialPort.ReadTimeout = Settings.Default.ReadTimeout;
+            SerialPort.WriteTimeout = Settings.Default.WriteTimeout;
+            UpdateInterval = Settings.Default.UpdateInterval;
+
+            var currentPluginPath = string.Empty;
+
             try
             {
-                control_plugin_collection = PluginLoader<ControlPlugin>.LoadPlugins(binary_directory + "\\Plugins", this);
-            }
-            catch
-            {
-                MessageBox.Show("Error loading control plugin.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
-            if (control_plugin_collection != null)
-            {
-                foreach (ControlPlugin control_plugin in control_plugin_collection)
+                foreach (var pluginPath in Directory.GetFiles(string.Format("{0}\\Plugins", Path.GetDirectoryName(Environment.GetCommandLineArgs()[0])), "*.dll"))
                 {
-                    control_plugins.Add(control_plugin.name, control_plugin);
-                }
-            }
+                    currentPluginPath = pluginPath;
 
-            ICollection<LoggingPlugin> logging_plugin_collection;
-            try
-            {
-                logging_plugin_collection = PluginLoader<LoggingPlugin>.LoadPlugins(binary_directory + "\\Plugins", this);
-            }
-            catch
-            {
-                MessageBox.Show("Error loading logging plugin.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
-            if (logging_plugin_collection != null)
-            {
-                int index = 1;
-                foreach (LoggingPlugin logging_plugin in logging_plugin_collection)
-                {
-                    logging_plugins.Add(index, logging_plugin);
-                    if (save_log_dialog.Filter != "")
+                    foreach (var type in Assembly.Load(AssemblyName.GetAssemblyName(pluginPath)).GetTypes())
                     {
-                        save_log_dialog.Filter += "|";
+                        if (type.GetInterface(typeof(IControlPlugin).FullName) != null)
+                        {
+                            ControlPlugins.Add((IControlPlugin)Activator.CreateInstance(type));
+                        }
+                        else if (type.GetInterface(typeof(ILoggingPlugin).FullName) != null)
+                        {
+                            LoggingPlugins.Add((ILoggingPlugin)Activator.CreateInstance(type));
+                        }
+                        else
+                        {
+                            throw new Exception();
+                        }
                     }
-                    save_log_dialog.Filter += logging_plugin.name + " (*." + logging_plugin.extension + ")|*." + logging_plugin.extension;
-                    index++;
                 }
             }
-            if (logging_plugins.Count > 0)
+            catch
             {
-                loggingToolStripMenuItem.Enabled = true;
+                ShowError("Error loading plugin {0}.", currentPluginPath);
             }
 
-            ToolStripMenuItem group_label = new ToolStripMenuItem();
-            ToolStripTextBox text_box = new ToolStripTextBox();
-            ToolStripMenuItem remove_group = new ToolStripMenuItem();
+            SaveLogDialog.Filter = string.Join("|", LoggingPlugins.Select(x => string.Format("{0} (*{1})|*{1}", x.GetType().Assembly.GetName().Name, x.Extension)));
+            LoggingMenuItem.Enabled = LoggingPlugins.Any();
 
-            text_box.TextChanged += new EventHandler(groupLabelToolStripTextBox_TextChanged);
-
-            group_label.Text = "Group Label";
-            group_label.DropDownItems.Add(text_box);
-
-            remove_group.Text = "Remove Group";
-            remove_group.Click += new EventHandler(removeGroupToolStripMenuItem_Click);
-
-            groupContextMenuStrip.Items.Add(group_label);
-            foreach (KeyValuePair<string, ControlPlugin> control_plugin in control_plugins)
-            {
-                ToolStripMenuItem menu_item = new ToolStripMenuItem();
-                menu_item.Text = "Add " + control_plugin.Key;
-                menu_item.Tag = control_plugin.Value;
-                menu_item.Click += new System.EventHandler(addControlToolStripMenuItem_Click);
-                groupContextMenuStrip.Items.Add(menu_item);
-            }
-            groupContextMenuStrip.Items.Add(remove_group);
+            UpdateBackgroundWorker.DoWork += new DoWorkEventHandler(UpdateBackgroundWorker_DoWork);
+            UpdateBackgroundWorker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(UpdateBackgroundWorker_RunWorkerCompleted);
+            UpdateBackgroundWorker.WorkerSupportsCancellation = true;
 
             if (Environment.GetCommandLineArgs().Length > 1)
             {
-                open(Environment.GetCommandLineArgs()[1]);
+                OpenConfig(Environment.GetCommandLineArgs()[1]);
             }
         }
 
-        public void serialWrite(string message)
-        {
+       public void SerialWrite(string Message)
+       {
             try
             {
-                serial_port.WriteLine(message);
+                SerialPort.WriteLine(Message);
             }
             catch
             {
-                MessageBox.Show("Serial port disconnected.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                cleanup();
+                ShowError("Serial port {0} disconnected.", SerialPort.PortName);
             }
         }
 
-        private Dictionary<string, ControlPlugin> control_plugins;
-        private Dictionary<int, LoggingPlugin> logging_plugins;
-        private XmlDocument config;
-        private OpenFileDialog open_config_dialog;
-        private SaveFileDialog save_config_dialog, save_log_dialog;
-        private string version = "1.0", port_name, config_path = null, log_path = null;
-        private int baud_rate, data_bits, update_interval, read_timeout, write_timeout;
-        private Parity parity;
-        private StopBits stop_bits;
-        private SafeSerialPort serial_port;
-        private bool editing = false, running = false, resizing = false, mouse_down = false;
-        private Thread update_thread;
-        private delegate void CleanupDelagate();
-        private CleanupDelagate cleanup_delagate;
-        private Control menu_source, mouse_over, clipboard;
-        private Point form_click_location, control_click_location;
-        private Size group_size;
-
-        private List<T> get<T>(Control parent) where T : Control
+        private DialogResult ShowError(string Format, params object[] Args)
         {
-            List<T> controls = new List<T>();
-
-            foreach (var control in parent.Controls)
-            {
-                if (control.GetType() == typeof(T))
-                {
-                    controls.Add(control as T);
-                }
-            }
-
-            return controls;
+            return MessageBox.Show(string.Format(Format, Args), GetType().Assembly.GetName().Name, MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
 
-        private void open(string file_name)
+        private DialogResult ShowConfirmation(string Format, params object[] Args)
         {
-            int x, y, width, height;
+            return MessageBox.Show(string.Format(Format, Args), GetType().Assembly.GetName().Name, MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+        }
 
-            this.config_path = file_name;
-
+        private void OpenConfig(string FileName)
+        {
             try
             {
-                config.Load(file_name);
+                NewFileMenuItem_Click(null, null);
 
-                XmlNodeList dependency_nodes = config["config"].GetElementsByTagName("dependency");
-                foreach (XmlNode dependency_node in dependency_nodes)
+                var config = XElement.Load(FileName);
+
+                var configType = config.Element("type").Value;
+                var configVersion = Convert.ToInt32(config.Element("version").Value.Split('.')[0]);
+
+                if (configType != GetType().Assembly.GetName().Name || configVersion != GetType().Assembly.GetName().Version.Major)
                 {
-                    if (!control_plugins.ContainsKey(dependency_node.InnerText))
+                    ShowError("This config requires {0} (v{1})", configType, configVersion);
+                    return;
+                }
+
+                foreach (var controlConfig in config.Descendants("control"))
+                {
+                    var controlType = controlConfig.Element("type").Value;
+                    var controlVersion = Convert.ToInt32(controlConfig.Element("version").Value.Split('.')[0]);
+                    var controlPlugin = ControlPlugins.FirstOrDefault(x => x.GetType().Assembly.GetName().Name == controlType);
+
+                    if (controlVersion != controlPlugin?.GetType().Assembly.GetName().Version.Major)
                     {
-                        MessageBox.Show("This config requires the plugin \"" + dependency_node.InnerText + "\".", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        ShowError("This config requires plugin {0} (v{1}).", controlType, controlVersion);
                         return;
                     }
                 }
 
-                if (!editing)
+                Text = config.Element("label").Value;
+                Width = Convert.ToInt32(config.Element("width").Value);
+                Height = Convert.ToInt32(config.Element("height").Value);
+
+                foreach (var groupConfig in config.Descendants("group"))
                 {
-                    Text = config["config"]["name"].InnerText;
-                    nameToolStripMenuItem.Text = Text;
-                    Width = Convert.ToInt32(config["config"]["width"].InnerText);
-                    Height = Convert.ToInt32(config["config"]["height"].InnerText);
+                    Controls.Add(Group.OpenConfig(groupConfig, ControlPlugins, LoggingPlugins.Any()));
                 }
 
-                XmlNodeList group_nodes = config["config"].GetElementsByTagName("group");
-                foreach (XmlNode group_node in group_nodes)
-                {
-                    GroupBox group = new GroupBox();
-
-                    x = Convert.ToInt32(group_node["x"].InnerText);
-                    y = Convert.ToInt32(group_node["y"].InnerText);
-                    width = Convert.ToInt32(group_node["width"].InnerText);
-                    height = Convert.ToInt32(group_node["height"].InnerText);
-
-                    group.Text = group_node["label"].InnerText;
-                    group.Location = new Point(x, y);
-                    group.Size = new Size(width, height);
-                    if (editing)
-                    {
-                        editGroup(group);
-                    }
-                    else
-                    {
-                        group.Enabled = false;
-                    }
-                    Controls.Add(group);
-
-                    XmlElement group_element = group_node as XmlElement;
-                    XmlNodeList control_nodes = group_element.GetElementsByTagName("control");
-                    foreach (XmlNode control_node in control_nodes)
-                    {
-                        FlowLayoutPanel control = control_plugins[control_node["plugin"].InnerText].create(control_node);
-                        if (editing)
-                        {
-                            editControl(control);
-                        }
-                        group.Controls.Add(control);
-                    }
-                }
+                DisableEdit();
+                SaveConfigDialog.FileName = FileName;
             }
             catch
             {
-                MessageBox.Show("Error opening config file.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ShowError("Error opening config file {0}.", FileName);
             }
         }
 
-        private void edit()
+        private void SaveConfig(string FileName)
         {
-            editing = true;
-            editToolStripMenuItem.Enabled = false;
-            connectToolStripMenuItem.Enabled = false;
-            FormBorderStyle = FormBorderStyle.Sizable;
-            ContextMenuStrip = formContextMenuStrip;
-            foreach (GroupBox group in get<GroupBox>(this))
+            try
             {
-                editGroup(group);
-                foreach (FlowLayoutPanel control in get<FlowLayoutPanel>(group))
+                var config =
+                    new XElement("config",
+                        new XElement("type", GetType().Assembly.GetName().Name),
+                        new XElement("version", GetType().Assembly.GetName().Version.ToString()),
+                        new XElement("label", Text),
+                        new XElement("width", Width),
+                        new XElement("height", Height)
+                    );
+
+                foreach (var group in Controls.OfType<Group>())
                 {
-                    editControl(control);
+                    config.Add(group.Config());
                 }
+
+                config.Save(FileName);
+                DisableEdit();
+            }
+            catch
+            {
+                ShowError("Error saving config file {0}.", FileName);
+            }
+        }
+ 
+        private void EnableEdit()
+        {
+            FormBorderStyle = FormBorderStyle.Sizable;
+            OpenConfigMenuItem.Enabled = false;
+            EditConfigMenuItem.Enabled = false;
+            SaveConfigAsMenuItem.Enabled = true;
+            SaveConfigMenuItem.Enabled = !string.IsNullOrWhiteSpace(SaveConfigDialog.FileName);
+            ConnectMenuItem.Enabled = false;
+            ContextMenuStrip.Enabled = true;
+
+            foreach (var group in Controls.OfType<Group>())
+            {
+                group.EnableEdit();
             }
         }
 
-        private void editGroup(GroupBox group)
+        private void DisableEdit()
         {
-            group.Enabled = true;
-            group.ContextMenuStrip = groupContextMenuStrip;
-            group.MouseMove += new MouseEventHandler(group_MouseMove);
-            group.MouseDown += new MouseEventHandler(group_MouseDown);
-            group.MouseUp += new MouseEventHandler(group_MouseUp);
-            group.MouseEnter += new EventHandler(group_MouseEnter);
-            group.MouseLeave += new EventHandler(group_MouseLeave);
-        }
+            FormBorderStyle = FormBorderStyle.FixedSingle;
+            OpenConfigMenuItem.Enabled = true;
+            EditConfigMenuItem.Enabled = true;
+            SaveConfigMenuItem.Enabled = false;
+            SaveConfigAsMenuItem.Enabled = false;
+            ConnectMenuItem.Enabled = true;
+            ContextMenuStrip.Enabled = false;
 
-        private void editControl(FlowLayoutPanel control)
-        {
-            foreach (Control element in control.Controls)
+            foreach (var group in Controls.OfType<Group>())
             {
-                element.Enabled = false;
+                group.DisableEdit();
             }
-            control.BorderStyle = BorderStyle.FixedSingle;
-            control.ContextMenuStrip = controlContextMenuStrip;
-            control.MouseMove += new MouseEventHandler(control_MouseMove);
-            control.MouseDown += new MouseEventHandler(control_MouseDown);
-            control.MouseUp += new MouseEventHandler(control_MouseUp);
-            control.MouseEnter += new EventHandler(control_MouseEnter);
-            control.MouseLeave += new EventHandler(control_MouseLeave);
         }
 
-        private void save()
+        private void UpdateBackgroundWorker_DoWork(object Sender, DoWorkEventArgs DoWorkEventArgs)
         {
-            HashSet<string> dependencies = new HashSet<string>();
+            long sleep;
+            ulong time = 0;
+            var controls = new List<Control>();
+            var values = new List<string>();
+            var stopwatch = new Stopwatch();
+            var delegates = new HashSet<Delegate>();
 
-            if (config_path == null)
+            try
             {
-                if (!saveConfigDialog())
+                SerialPort.Open();
+            }
+            catch
+            {
+                ShowError("Error opening serial port {0}.", SerialPort.PortName);
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(SaveLogDialog.FileName))
+            {
+                var fields = new List<string>();
+
+                fields.Add("Time");
+
+                foreach (var group in Controls.OfType<Group>())
                 {
+                    foreach (var control in group.Controls.OfType<Control>())
+                    {
+                        if (control.Log)
+                        {
+                            fields.Add(control.Label);
+                        }
+                    }
+                }
+
+                try
+                {
+                    LoggingPlugins.First(x => x.Extension == Path.GetExtension(SaveLogDialog.FileName)).Open(SaveLogDialog.FileName, fields);
+                }
+                catch
+                {
+                    ShowError("Error opening log file {0}.", SaveLogDialog.FileName);
                     return;
                 }
             }
 
-            editing = false;
-            editToolStripMenuItem.Enabled = true;
-            connectToolStripMenuItem.Enabled = true;
-            FormBorderStyle = FormBorderStyle.FixedSingle;
-            ContextMenuStrip = null;
-            foreach (GroupBox group in get<GroupBox>(this))
+            foreach (var group in Controls.OfType<Group>())
             {
-                saveGroup(group);
-                foreach (FlowLayoutPanel control in get<FlowLayoutPanel>(group))
+                foreach (var control in group.Controls.OfType<Control>())
                 {
-                    saveControl(control);
-                }
-            }
-
-            config.RemoveAll();
-
-            XmlComment comment = config.CreateComment("OpenLab Config");
-            config.AppendChild(comment);
-
-            XmlNode config_node = config.CreateElement("config");
-            config.AppendChild(config_node);
-
-            XmlNode version_node = config.CreateElement("version");
-            version_node.InnerText = version;
-            config_node.AppendChild(version_node);
-
-            XmlNode name_node = config.CreateElement("name");
-            name_node.InnerText = Text;
-            config_node.AppendChild(name_node);
-
-            XmlNode width_node = config.CreateElement("width");
-            width_node.InnerText = Convert.ToString(Width);
-            config_node.AppendChild(width_node);
-
-            XmlNode height_node = config.CreateElement("height");
-            height_node.InnerText = Convert.ToString(Height);
-            config_node.AppendChild(height_node);
-
-            foreach (GroupBox group in get<GroupBox>(this))
-            {
-                XmlNode group_node = config.CreateElement("group");
-
-                XmlNode group_label_node = config.CreateElement("label");
-                group_label_node.InnerText = group.Text;
-                group_node.AppendChild(group_label_node);
-
-                XmlNode group_x_node = config.CreateElement("x");
-                group_x_node.InnerText = Convert.ToString(group.Location.X);
-                group_node.AppendChild(group_x_node);
-
-                XmlNode group_y_node = config.CreateElement("y");
-                group_y_node.InnerText = Convert.ToString(group.Location.Y);
-                group_node.AppendChild(group_y_node);
-
-                XmlNode group_width_node = config.CreateElement("width");
-                group_width_node.InnerText = Convert.ToString(group.Width);
-                group_node.AppendChild(group_width_node);
-
-                XmlNode group_height_node = config.CreateElement("height");
-                group_height_node.InnerText = Convert.ToString(group.Height);
-                group_node.AppendChild(group_height_node);
-
-                foreach (FlowLayoutPanel control in group.Controls)
-                {
-                    Tags tags = control.Tag as Tags;
-                    XmlDocument control_config = control_plugins[tags["plugin"]].save(control);
-                    XmlNode imported_node = config.ImportNode(control_config.DocumentElement, true);
-                    group_node.AppendChild(imported_node);
-                    dependencies.Add(tags["plugin"]);
-                }
-                config_node.AppendChild(group_node);
-            }
-
-            foreach (string plugin in dependencies)
-            {
-                XmlNode dependency_node = config.CreateElement("dependency");
-                dependency_node.InnerText = plugin;
-                config_node.InsertBefore(dependency_node, name_node);
-            }
-
-            try
-            {
-                config.Save(config_path);
-            }
-            catch
-            {
-                MessageBox.Show("Error saving config file.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        private void saveGroup(GroupBox group)
-        {
-            group.Enabled = false;
-            group.ContextMenuStrip = null;
-            group.MouseMove -= new MouseEventHandler(group_MouseMove);
-            group.MouseDown -= new MouseEventHandler(group_MouseDown);
-            group.MouseUp -= new MouseEventHandler(group_MouseUp);
-            group.MouseEnter -= new EventHandler(group_MouseEnter);
-            group.MouseLeave -= new EventHandler(group_MouseLeave);
-        }
-
-        private void saveControl(FlowLayoutPanel control)
-        {
-            foreach (Control element in control.Controls)
-            {
-                element.Enabled = true;
-            }
-            control.BorderStyle = BorderStyle.None;
-            control.ContextMenuStrip = null;
-            control.MouseMove -= new MouseEventHandler(control_MouseMove);
-            control.MouseDown -= new MouseEventHandler(control_MouseDown);
-            control.MouseUp -= new MouseEventHandler(control_MouseUp);
-            control.MouseEnter -= new EventHandler(control_MouseEnter);
-            control.MouseLeave -= new EventHandler(control_MouseLeave);
-        }
-
-        private bool saveConfigDialog()
-        {
-            if (save_config_dialog.ShowDialog() == DialogResult.Cancel)
-            {
-                return false;
-            }
-            config_path = save_config_dialog.FileName;
-
-            return true;
-        }
-
-        private void update()
-        {
-            long sleep;
-            ulong time = 0;
-            List<FlowLayoutPanel> controls = new List<FlowLayoutPanel>();
-            List<string> values = new List<string>();
-            Stopwatch stopwatch = new Stopwatch();
-
-            foreach (GroupBox group in get<GroupBox>(this))
-            {
-                foreach (FlowLayoutPanel control in get<FlowLayoutPanel>(group))
-                {
+                    control.SetSerialPort(SerialPort);
                     controls.Add(control);
                 }
             }
 
-            running = true;
-            while (running)
+            while (!UpdateBackgroundWorker.CancellationPending)
             {
                 stopwatch.Restart();
                 values.Clear();
-                values.Add(Convert.ToString(time));
-                foreach (FlowLayoutPanel control in controls)
+                values.Add(time.ToString());
+
+                foreach (var control in controls)
                 {
-                    Tags tags = control.Tag as Tags;
+                    var value = default(string);
+
                     try
                     {
-                        control_plugins[tags["plugin"]].update(control, serial_port);
+                        value = control.GetValue();
+                        BeginInvoke(control.SetValueDelagate, value);
                     }
                     catch
                     {
-                        MessageBox.Show("Serial port disconnected.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        BeginInvoke(cleanup_delagate);
+                        ShowError("Serial port {0} disconnected", SerialPort.PortName);
                         return;
                     }
-                    if (tags.ContainsKey("log"))
+
+                    if (control.Log)
                     {
-                        if (tags["log"] == "yes")
-                        {
-                            values.Add(tags["value"].TrimEnd('\r', '\n'));
-                        }
+                        values.Add(value.TrimEnd('\r', '\n'));
                     }
                 }
-                if (log_path != null)
+
+                if (!string.IsNullOrWhiteSpace(SaveLogDialog.FileName))
                 {
                     try
                     {
-                        logging_plugins[save_log_dialog.FilterIndex].update(values);
+                        LoggingPlugins.First(x => x.Extension == Path.GetExtension(SaveLogDialog.FileName)).Write(values);
                     }
                     catch
                     {
-                        MessageBox.Show("Error writing to log file.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        BeginInvoke(cleanup_delagate);
+                        ShowError("Error writing log file {0}.", SaveLogDialog.FileName);
                         return;
                     }
                 }
-                time += (ulong)update_interval;
-                sleep = update_interval - stopwatch.ElapsedMilliseconds;
+
+                time += (ulong)UpdateInterval;
+                sleep = UpdateInterval - stopwatch.ElapsedMilliseconds;
+
                 if (sleep > 0)
                 {
                     Thread.Sleep((int)sleep);
@@ -526,661 +446,317 @@ namespace OpenLab
             }
         }
 
-        private void cleanup()
+        private void UpdateBackgroundWorker_RunWorkerCompleted(object Sender, RunWorkerCompletedEventArgs RunWorkerCompletedEventArgs)
         {
-            running = false;
-            update_thread.Join();
-            serial_port.Dispose();
-            if (log_path != null)
+            SerialPort.Close();
+
+            if (!string.IsNullOrWhiteSpace(SaveLogDialog.FileName))
             {
                 try
                 {
-                    logging_plugins[save_log_dialog.FilterIndex].save();
+                    LoggingPlugins.First(x => x.Extension == Path.GetExtension(SaveLogDialog.FileName)).Close();
                 }
                 catch
                 {
-                    MessageBox.Show("Error writing to log file.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    ShowError("Error writing log to {0}.", SaveLogDialog.FileName);
                 }
-                log_path = null;
+
+                SaveLogDialog.FileName = null;
             }
 
-            newToolStripMenuItem.Enabled = true;
-            openToolStripMenuItem.Enabled = true;
-            editToolStripMenuItem.Enabled = true;
-            saveToolStripMenuItem.Enabled = true;
-            saveConfigAsToolStripMenuItem.Enabled = true;
-            connectToolStripMenuItem.Enabled = true;
-            disconnectToolStripMenuItem.Enabled = false;
-            settingsToolStripMenuItem.Enabled = true;
-            loggingToolStripMenuItem.Enabled = true;
-            saveLogAsToolStripMenuItem.Enabled = true;
-            foreach (GroupBox group in get<GroupBox>(this))
-            {
-                group.Enabled = false;
-            }
+            NewConfigMenuItem.Enabled = true;
+            OpenConfigMenuItem.Enabled = true;
+            EditConfigMenuItem.Enabled = true;
+            ConnectMenuItem.Enabled = true;
+            DisconnectMenuItem.Enabled = false;
+            SerialSettingsEnabled(true);
+            SaveLogAsMenuItem.Enabled = true;
+            ControlsEnabled(false);
         }
 
-        private void groupContextMenuStrip_Opening(object sender, CancelEventArgs e)
+        private void ControlForm_FormClosing(object Sender, FormClosingEventArgs EventArgs)
         {
-            menu_source = (sender as ContextMenuStrip).SourceControl;
-            ToolStripMenuItem control_label = groupContextMenuStrip.Items[0] as ToolStripMenuItem;
-            control_label.DropDownItems[0].Text = menu_source.Text;
-        }
-
-        private void controlContextMenuStrip_Opening(object sender, CancelEventArgs e)
-        {
-            ToolStripMenuItem control_title = new ToolStripMenuItem();
-            ToolStripTextBox text_box = new ToolStripTextBox();
-            ToolStripMenuItem log_value = null;
-            ToolStripMenuItem remove_control = new ToolStripMenuItem();
-            menu_source = (sender as ContextMenuStrip).SourceControl;
-            Tags tags = menu_source.Tag as Tags;
-
-            controlContextMenuStrip.Items.Clear();
-
-            text_box.Text = tags["label"];
-            text_box.TextChanged += new EventHandler(controlLabelToolStripTextBox_TextChanged);
-
-            control_title.Text = "Label";
-            control_title.DropDownItems.Add(text_box);
-
-            if (tags.ContainsKey("log") && logging_plugins.Count > 0)
+            if (!EditConfigMenuItem.Enabled)
             {
-                log_value = new ToolStripMenuItem();
-                log_value.Text = "Log Value";
-                log_value.Click += new EventHandler(logValueToolStripTextBox_Click);
-                if (tags["log"] == "yes")
+                if (UpdateBackgroundWorker.IsBusy)
                 {
-                    log_value.Checked = true;
-                }
-            }
-
-            remove_control.Text = "Remove";
-            remove_control.Click += new EventHandler(removeControlToolStripMenuItem_Click);
-
-            controlContextMenuStrip.Items.Add(control_title);
-            foreach (ToolStripMenuItem menu_item in control_plugins[tags["plugin"]].settings(menu_source as FlowLayoutPanel))
-            {
-                controlContextMenuStrip.Items.Add(menu_item);
-            }
-            if (log_value != null)
-            {
-                controlContextMenuStrip.Items.Add(log_value);
-            }
-            controlContextMenuStrip.Items.Add(remove_control);
-        }
-
-        private void controlForm_FormClosing(object sender, FormClosingEventArgs e)
-        {
-            if (editing)
-            {
-                if (MessageBox.Show("You have unsaved changes.\nDo you really want to quit?", "OpenLab", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.No)
-                {
-                    e.Cancel = true;
-                    return;
-                }
-            }
-            else if (running)
-            {
-                if (MessageBox.Show("The serial port is currently connected.\nDo you really want to quit?", "OpenLab", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
-                {
-                    cleanup();
-                }
-                else
-                {
-                    e.Cancel = true;
-                    return;
-                }
-            }
-
-            Settings.Default.port_name = port_name;
-            Settings.Default.baud_rate = baud_rate;
-            Settings.Default.parity = parity;
-            Settings.Default.data_bits = data_bits;
-            Settings.Default.stop_bits = stop_bits;
-            Settings.Default.read_timeout = read_timeout;
-            Settings.Default.write_timeout = write_timeout;
-            Settings.Default.update_interval = update_interval;
-            Settings.Default.Save();
-        }
-
-        private void controlForm_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (editing)
-            {
-                if (mouse_over != null)
-                {
-                    if (e.Control && e.KeyCode == Keys.C)
+                    if (ShowConfirmation("The serial port is currently in use.\nDo you want to quit?") == DialogResult.Yes)
                     {
-                        clipboard = mouse_over;
-                    }
-                    else if (e.Control && e.KeyCode == Keys.V && clipboard != null)
-                    {
-                        if (clipboard.GetType() == typeof(FlowLayoutPanel))
-                        {
-                            Control parent = mouse_over;
-                            if (mouse_over.GetType() != typeof(GroupBox))
-                            {
-                                parent = mouse_over.Parent;
-                            }
-                            FlowLayoutPanel control = clipboard as FlowLayoutPanel;
-                            Tags tags = control.Tag as Tags;
-                            FlowLayoutPanel control_copy = control_plugins[tags["plugin"]].copy(control);
-                            control_copy.Location = parent.PointToClient(Cursor.Position);
-                            editControl(control_copy);
-                            parent.Controls.Add(control_copy);
-                            control_copy.BringToFront();
-                        }
+                        UpdateBackgroundWorker.CancelAsync();
                     }
                     else
                     {
-                        switch (e.KeyCode)
-                        {
-                            case Keys.Left:
-                                mouse_over.Location = new Point(mouse_over.Location.X - 1, mouse_over.Location.Y);
-                                break;
-                            case Keys.Right:
-                                mouse_over.Location = new Point(mouse_over.Location.X + 1, mouse_over.Location.Y);
-                                break;
-                            case Keys.Up:
-                                mouse_over.Location = new Point(mouse_over.Location.X, mouse_over.Location.Y - 1);
-                                break;
-                            case Keys.Down:
-                                mouse_over.Location = new Point(mouse_over.Location.X, mouse_over.Location.Y + 1);
-                                break;
-                            case Keys.Delete:
-                                if (mouse_over.GetType() == typeof(GroupBox))
-                                {
-                                    Controls.Remove(mouse_over);
-                                }
-                                else if (mouse_over.GetType() == typeof(FlowLayoutPanel))
-                                {
-                                    mouse_over.Parent.Controls.Remove(mouse_over);
-                                }
-                                break;
-                        }
+                        EventArgs.Cancel = true;
+                        return;
                     }
                 }
-                if (e.Control && e.KeyCode == Keys.V && clipboard != null)
+                else
                 {
-                    if (clipboard.GetType() == typeof(GroupBox))
+                    if (ShowConfirmation("You have unsaved changes.\nDo you want to quit?") == DialogResult.No)
                     {
-                        GroupBox group = clipboard as GroupBox;
-                        GroupBox group_copy = new GroupBox();
-                        group_copy.Text = group.Text;
-                        group_copy.Location = PointToClient(Cursor.Position);
-                        group_copy.Size = group.Size;
-                        foreach (FlowLayoutPanel control in group.Controls)
-                        {
-                            Tags tags = control.Tag as Tags;
-                            FlowLayoutPanel control_copy = control_plugins[tags["plugin"]].copy(control);
-                            editControl(control_copy);
-                            group_copy.Controls.Add(control_copy);
-                        }
-                        editGroup(group_copy);
-                        Controls.Add(group_copy);
-                        group_copy.BringToFront();
+                        EventArgs.Cancel = true;
+                        return;
                     }
                 }
             }
+
+            Settings.Default.PortName = SerialPort.PortName;
+            Settings.Default.BaudRate = SerialPort.BaudRate;
+            Settings.Default.Parity = SerialPort.Parity;
+            Settings.Default.DataBits = SerialPort.DataBits;
+            Settings.Default.StopBits = SerialPort.StopBits;
+            Settings.Default.ReadTimeout = SerialPort.ReadTimeout;
+            Settings.Default.WriteTimeout = SerialPort.WriteTimeout;
+            Settings.Default.UpdateInterval = UpdateInterval;
+            Settings.Default.Save();
         }
 
-        private void newToolStripMenuItem_Click(object sender, EventArgs e)
+        private void NewFileMenuItem_Click(object Sender, EventArgs EventArgs)
         {
-            foreach (GroupBox group in get<GroupBox>(this))
+            if (!EditConfigMenuItem.Enabled)
+            {
+                if (ShowConfirmation("You have unsaved changes.\nDo you want to discard them?") == DialogResult.No)
+                {
+                    return;
+                }
+            }
+
+            foreach (var group in Controls.OfType<Group>())
             {
                 Controls.Remove(group);
             }
-            Text = "OpenLab";
-            nameToolStripMenuItem.Text = Text;
+
+            Text = GetType().Assembly.GetName().Name;
             Width = 800;
             Height = 600;
-            config_path = null;
+            SaveConfigDialog.FileName = null;
+            DisableEdit();
         }
 
-        private void openToolStripMenuItem_Click(object sender, EventArgs e)
+        private void OpenFileMenuItem_Click(object Sender, EventArgs EventArgs)
         {
-            if (open_config_dialog.ShowDialog() == DialogResult.Cancel)
+            if (OpenConfigDialog.ShowDialog() == DialogResult.OK)
             {
-                return;
-            }
-            open(open_config_dialog.FileName);
-        }
-
-        private void editToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            edit();
-        }
-
-        private void saveToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            save();
-        }
-
-        private void saveConfigAsToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            if (saveConfigDialog())
-            {
-                save();
+                OpenConfig(OpenConfigDialog.FileName);
             }
         }
 
-        private void quitToolStripMenuItem_Click(object sender, EventArgs e)
+        private void EditFileMenuItem_Click(object Sender, EventArgs EventArgs)
+        {
+            EnableEdit();
+        }
+
+        private void SaveFileMenuItem_Click(object Sender, EventArgs EventArgs)
+        {
+            if (string.IsNullOrWhiteSpace(OpenConfigDialog.FileName))
+            {
+                SaveConfigAsMenuItem_Click(null, null);
+            }
+            else
+            {
+                SaveConfig(SaveConfigDialog.FileName);
+            }
+        }
+
+        private void SaveConfigAsMenuItem_Click(object Sender, EventArgs EventArgs)
+        {
+            if (SaveConfigDialog.ShowDialog() == DialogResult.OK)
+            {
+                SaveConfig(SaveConfigDialog.FileName);
+            }
+        }
+
+        private void QuitMenuItem_Click(object Sender, EventArgs EventArgs)
         {
             Close();
         }
 
-        private void connectToolStripMenuItem_Click(object sender, EventArgs e)
+        private void SerialMenuItem_DropDownOpening(object Sender, EventArgs EventArgs)
         {
-            if (port_name == "" || baud_rate <= 0 || data_bits <= 0 || update_interval <= 0 || read_timeout <= 0 || write_timeout <= 0)
+            if (!UpdateBackgroundWorker.IsBusy)
             {
-                MessageBox.Show("Invalid port settings.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                var ports = SerialPort.GetPortNames();
+
+                PortNameComboBox.Items.Clear();
+
+                foreach (var port in ports)
+                {
+                    PortNameComboBox.Items.Add(port);
+                }
+
+                PortNameComboBox.Text = SerialPort.PortName;
+                BaudRateTextBox.Text = SerialPort.BaudRate.ToString();
+                ParityComboBox.Items.Clear();
+
+                foreach (var parity in Enum.GetNames(typeof(Parity)))
+                {
+                    ParityComboBox.Items.Add(parity);
+                }
+
+                ParityComboBox.Text = SerialPort.Parity.ToString();
+                DataBitsTextBox.Text = SerialPort.DataBits.ToString();
+                StopBitsComboBox.Items.Clear();
+
+                foreach (var stopBit in Enum.GetNames(typeof(StopBits)))
+                {
+                    StopBitsComboBox.Items.Add(stopBit);
+                }
+
+                StopBitsComboBox.Text = SerialPort.StopBits.ToString();
+                ReadTimeoutTextBox.Text = SerialPort.ReadTimeout.ToString();
+                WriteTimeoutTextBox.Text = SerialPort.WriteTimeout.ToString();
+                UpdateIntervalTextBox.Text = UpdateInterval.ToString();
+            }
+        }
+
+        private void ConnectMenuItem_Click(object Sender, EventArgs EventArgs)
+        {
+            NewConfigMenuItem.Enabled = false;
+            OpenConfigMenuItem.Enabled = false;
+            EditConfigMenuItem.Enabled = false;
+            ConnectMenuItem.Enabled = false;
+            DisconnectMenuItem.Enabled = true;
+            SerialSettingsEnabled(false);
+            SaveLogAsMenuItem.Enabled = false;
+            ControlsEnabled(true);
+
+            UpdateBackgroundWorker.RunWorkerAsync();
+        }
+
+        private void DisconnectMenuItem_Click(object Sender, EventArgs EventArgs)
+        {
+            UpdateBackgroundWorker.CancelAsync();
+        }
+
+        private void PortNameComboBox_SelectedIndexChanged(object Sender, EventArgs EventArgs)
+        {
+            SerialPort.PortName = PortNameComboBox.Text;
+        }
+
+        private void BaudRateTextBox_TextChanged(object Sender, EventArgs EventArgs)
+        {
+            try
+            {
+                SerialPort.BaudRate = Convert.ToInt32(BaudRateTextBox.Text);
+            }
+            catch
+            {
+                // Ignore exception
+            }
+        }
+
+        private void ParityComboBox_SelectedIndexChanged(object Sender, EventArgs EventArgs)
+        {
+            SerialPort.Parity = (Parity)ParityComboBox.SelectedIndex;
+        }
+
+        private void DataBitsTextBox_TextChanged(object Sender, EventArgs EventArgs)
+        {
+            try
+            {
+                SerialPort.DataBits = Convert.ToInt32(DataBitsTextBox.Text);
+            }
+            catch
+            {
+                // Ignore exception
+            }
+        }
+
+        private void StopBitsComboBox_SelectedIndexChanged(object Sender, EventArgs EventArgs)
+        {
+            SerialPort.StopBits = (StopBits)StopBitsComboBox.SelectedIndex;
+        }
+
+        private void ReadTimeoutTextBox_TextChanged(object Sender, EventArgs EventArgs)
+        {
+            try
+            {
+                SerialPort.ReadTimeout = Convert.ToInt32(ReadTimeoutTextBox.Text);
+            }
+            catch
+            {
+                // Ignore exception
+            }
+        }
+
+        private void WriteTimeoutTextBox_TextChanged(object Sender, EventArgs EventArgs)
+        {
+            try
+            {
+                SerialPort.WriteTimeout = Convert.ToInt32(WriteTimeoutTextBox.Text);
+            }
+            catch
+            {
+                // Ignore exception
+            }
+        }
+
+        private void UpdateIntervalMenuItem_TextChanged(object Sender, EventArgs EventArgs)
+        {
+            try
+            {
+                UpdateInterval = Convert.ToInt32(UpdateIntervalTextBox.Text);
+            }
+            catch
+            {
+                // Ignore exception
+            }
+        }
+
+        private void SaveLogAsMenuItem_Click(object Sender, EventArgs EventArgs)
+        {
+            SaveLogDialog.ShowDialog();
+        }
+
+        private void ContextMenuStrip_Opening(object Sender, CancelEventArgs CancelEventArgs)
+        {
+            if (!ContextMenuStrip.Enabled)
+            {
+                CancelEventArgs.Cancel = true;
                 return;
             }
 
-            serial_port = new SafeSerialPort(port_name, baud_rate, parity, data_bits, stop_bits);
-            serial_port.ReadTimeout = read_timeout;
-            serial_port.WriteTimeout = write_timeout;
-
-            try
-            {
-                serial_port.Open();
-            }
-            catch
-            {
-                MessageBox.Show("Error opening serial device.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
-
-            if (log_path != null)
-            {
-                List<string> fields = new List<string>();
-                List<string> filters = save_log_dialog.Tag as List<string>;
-
-                fields.Add("time");
-                foreach (GroupBox group in get<GroupBox>(this))
-                {
-                    foreach (FlowLayoutPanel control in get<FlowLayoutPanel>(group))
-                    {
-                        Tags tags = control.Tag as Tags;
-                        if (tags.ContainsKey("log"))
-                        {
-                            if (tags["log"] == "yes")
-                            {
-                                fields.Add(tags["label"]);
-                            }
-                        }
-                    }
-                }
-                try
-                {
-                    logging_plugins[save_log_dialog.FilterIndex].setup(log_path, fields);
-                }
-                catch
-                {
-                    MessageBox.Show("Error creating log file.", "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-            }
-
-            update_thread = new Thread(update);
-            update_thread.Start();
-
-            newToolStripMenuItem.Enabled = false;
-            openToolStripMenuItem.Enabled = false;
-            editToolStripMenuItem.Enabled = false;
-            saveToolStripMenuItem.Enabled = false;
-            saveConfigAsToolStripMenuItem.Enabled = false;
-            connectToolStripMenuItem.Enabled = false;
-            disconnectToolStripMenuItem.Enabled = true;
-            settingsToolStripMenuItem.Enabled = false;
-            loggingToolStripMenuItem.Enabled = false;
-            saveLogAsToolStripMenuItem.Enabled = false;
-            foreach (GroupBox group in get<GroupBox>(this))
-            {
-                group.Enabled = true;
-            }
+            ContextMenuLocation = PointToClient(Cursor.Position);
+            FormLabelTextBox.Text = Text;
         }
 
-        private void disconnectToolStripMenuItem_Click(object sender, EventArgs e)
+        private void FormLabelTextBox_TextChanged(object Sender, EventArgs EventArgs)
         {
-            cleanup();
+            Text = FormLabelTextBox.Text;
         }
 
-        private void portNameToolStripMenuItem_DropDownOpening(object sender, EventArgs e)
+        private void AddGroupMenuItem_Click(object Sender, EventArgs EventArgs)
         {
-            string[] ports = SafeSerialPort.GetPortNames();
+            var group = Group.Create(ContextMenuLocation, ControlPlugins);
 
-            portNameToolStripComboBox.Items.Clear();
-            foreach (string port in ports)
-            {
-                portNameToolStripComboBox.Items.Add(port);
-            }
-        }
-
-        private void portNameToolStripComboBox_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            port_name = portNameToolStripComboBox.Text;
-        }
-
-        private void baudRateToolStripTextBox_TextChanged(object sender, EventArgs e)
-        {
-            try
-            {
-                baud_rate = Convert.ToInt32(baudRateToolStripTextBox.Text);
-            }
-            catch
-            {
-                // Ignore exception
-            }
-        }
-
-        private void parityToolStripComboBox_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            switch (parityToolStripComboBox.SelectedIndex)
-            {
-                case 0:
-                    parity = Parity.Even;
-                    break;
-                case 1:
-                    parity = Parity.Mark;
-                    break;
-                case 2:
-                    parity = Parity.None;
-                    break;
-                case 3:
-                    parity = Parity.Odd;
-                    break;
-                case 4:
-                    parity = Parity.Space;
-                    break;
-            }
-        }
-
-        private void dataBitsToolStripTextBox_TextChanged(object sender, EventArgs e)
-        {
-            try
-            {
-                data_bits = Convert.ToInt32(dataBitsToolStripTextBox.Text);
-            }
-            catch
-            {
-                // Ignore exception
-            }
-        }
-
-        private void stopBitsToolStripComboBox_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            switch (stopBitsToolStripComboBox.SelectedIndex)
-            {
-                case 0:
-                    stop_bits = StopBits.One;
-                    break;
-                case 1:
-                    stop_bits = StopBits.OnePointFive;
-                    break;
-                case 2:
-                    stop_bits = StopBits.Two;
-                    break;
-            }
-        }
-
-        private void readTimeoutToolStripTextBox_TextChanged(object sender, EventArgs e)
-        {
-            try
-            {
-                read_timeout = Convert.ToInt32(readTimeoutToolStripTextBox.Text);
-            }
-            catch
-            {
-                // Ignore exception
-            }
-        }
-
-        private void writeTimeoutToolStripTextBox_TextChanged(object sender, EventArgs e)
-        {
-            try
-            {
-                write_timeout = Convert.ToInt32(writeTimeoutToolStripTextBox.Text);
-            }
-            catch
-            {
-                // Ignore exception
-            }
-        }
-
-        private void updateIntervalToolStripMenuItem_TextChanged(object sender, EventArgs e)
-        {
-            try
-            {
-                update_interval = Convert.ToInt32(updateIntervalToolStripTextBox.Text);
-            }
-            catch
-            {
-                // Ignore exception
-            }
-        }
-
-
-        private void saveLogAsToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            if (save_log_dialog.ShowDialog() == DialogResult.Cancel)
-            {
-                return;
-            }
-            log_path = save_log_dialog.FileName;
-        }
-
-        private void aboutToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            string message = "OpenLab (Version " + version + ") - Open Source Lab Equipment Control Software\n\n";
-
-            message += "Control Plugins:\n\n";
-            if (control_plugins.Count == 0)
-            {
-                message += "\t(none)\n";
-            }
-            else
-            {
-                foreach (string plugin_name in control_plugins.Keys)
-                {
-                    message += "    \u2022  " + plugin_name + "\n";
-                }
-            }
-            message += "\nLogging Plugins:\n\n";
-            if (logging_plugins.Count == 0)
-            {
-                message += "        (none)\n";
-            }
-            else
-            {
-                foreach (LoggingPlugin plugin in logging_plugins.Values)
-                {
-                    message += "    \u2022  " + plugin.name + "\n";
-                }
-            }
-
-            MessageBox.Show(message, "OpenLab");
-        }
-
-
-        private void editFormContextMenuStrip_Opened(object sender, EventArgs e)
-        {
-            ContextMenuStrip context_menu = sender as ContextMenuStrip;
-            Point absolute_click_location = Cursor.Position;
-            control_click_location = context_menu.SourceControl.PointToClient(absolute_click_location);
-        }
-
-        private void formTitleToolStripTextBox_TextChanged(object sender, EventArgs e)
-        {
-            Text = formNameToolStripTextBox.Text;
-        }
-
-        private void addGroupToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            GroupBox group = new GroupBox();
-
-            group.Text = "Group";
-            group.Location = control_click_location;
-            group.Size = new Size(300, 100);
-            editGroup(group);
             Controls.Add(group);
+            group.BringToFront();
+            group.EnableEdit();
         }
 
-        private void group_MouseMove(object sender, MouseEventArgs e)
+        private void SerialSettingsEnabled(bool Enabled)
         {
-            GroupBox group = sender as GroupBox;
-            Point screen_location = Cursor.Position, form_cursor_location, group_cursor_location;
-            form_cursor_location = PointToClient(screen_location);
-            group_cursor_location = group.PointToClient(screen_location);
-            if (group_cursor_location.Y > group.Height - 10 && group_cursor_location.X > group.Width - 10 || resizing)
+            PortNameMenuItem.Enabled = Enabled;
+            BaudRateMenuItem.Enabled = Enabled;
+            ParityMenuItem.Enabled = Enabled;
+            DataBitsMenuItem.Enabled = Enabled;
+            StopBitsMenuItem.Enabled = Enabled;
+            ReadTimeoutMenuItem.Enabled = Enabled;
+            WriteTimeoutMenuItem.Enabled = Enabled;
+            UpdateIntervalMenuItem.Enabled = Enabled;
+        }
+
+        private void ControlsEnabled(bool Enabled)
+        {
+           foreach (var group in Controls.OfType<Group>())
             {
-                Cursor.Current = Cursors.SizeNWSE;
-                if (mouse_down)
+                group.Enabled = Enabled;
+
+                foreach (var control in group.Controls.OfType<Control>())
                 {
-                    resizing = true;
-                    group.Height = group_size.Height + form_cursor_location.Y - form_click_location.Y;
-                    group.Width = group_size.Width + form_cursor_location.X - form_click_location.X;
+                    control.Enabled = Enabled;
                 }
             }
-            else
-            {
-                if (mouse_down)
-                {
-                    Cursor.Current = Cursors.Default;
-                    group.Location = new Point(form_cursor_location.X - control_click_location.X, form_cursor_location.Y - control_click_location.Y);
-                }
-                else
-                {
-                    Cursor.Current = Cursors.SizeAll;
-                }
-            }
-        }
-
-        private void group_MouseDown(object sender, MouseEventArgs e)
-        {
-            GroupBox group = sender as GroupBox;
-            Cursor.Current = Cursors.SizeAll;
-            Point screen_location = Cursor.Position;
-            form_click_location = PointToClient(screen_location);
-            control_click_location = e.Location;
-            group_size = group.Size;
-            mouse_down = true;
-        }
-
-        private void group_MouseUp(object sender, MouseEventArgs e)
-        {
-            mouse_down = false;
-            resizing = false;
-        }
-
-        private void group_MouseEnter(object sender, EventArgs e)
-        {
-            mouse_over = sender as GroupBox;
-        }
-
-        private void group_MouseLeave(object sender, EventArgs e)
-        {
-            mouse_over = null;
-        }
-
-        private void groupLabelToolStripTextBox_TextChanged(object sender, EventArgs e)
-        {
-            ToolStripTextBox text_box = sender as ToolStripTextBox;
-            if (menu_source != null)
-            {
-                menu_source.Text = text_box.Text;
-            }
-        }
-
-        private void addControlToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            ToolStripMenuItem menu_item = sender as ToolStripMenuItem;
-            ControlPlugin control_plugin = menu_item.Tag as ControlPlugin;
-            FlowLayoutPanel control = control_plugin.create(new Point(control_click_location.X, control_click_location.Y));
-            editControl(control);
-            menu_source.Controls.Add(control);
-        }
-
-        private void removeGroupToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            Controls.Remove(menu_source);
-        }
-
-        private void control_MouseMove(object sender, MouseEventArgs e)
-        {
-            FlowLayoutPanel control = sender as FlowLayoutPanel;
-            Cursor.Current = Cursors.SizeAll;
-            if (mouse_down)
-            {
-                Cursor.Current = Cursors.Default;
-                Point screen_location = Cursor.Position, group_location;
-                group_location = control.Parent.PointToClient(screen_location);
-                control.Location = new Point(group_location.X - control_click_location.X, group_location.Y - control_click_location.Y);
-            }
-            else
-            {
-                Cursor.Current = Cursors.SizeAll;
-            }
-        }
-
-        private void control_MouseDown(object sender, MouseEventArgs e)
-        {
-            Cursor.Current = Cursors.SizeAll;
-            Point screen_location = Cursor.Position;
-            form_click_location = PointToClient(screen_location);
-            control_click_location = e.Location;
-            mouse_down = true;
-        }
-
-        private void control_MouseUp(object sender, MouseEventArgs e)
-        {
-            mouse_down = false;
-        }
-
-        private void control_MouseEnter(object sender, EventArgs e)
-        {
-            mouse_over = sender as FlowLayoutPanel;
-        }
-
-        private void control_MouseLeave(object sender, EventArgs e)
-        {
-            mouse_over = null;
-        }
-
-        private void controlLabelToolStripTextBox_TextChanged(object sender, EventArgs e)
-        {
-            ToolStripTextBox text_box = sender as ToolStripTextBox;
-            if (menu_source != null)
-            {
-                FlowLayoutPanel control = menu_source as FlowLayoutPanel;
-                Tags tags = control.Tag as Tags;
-                tags["label"] = text_box.Text;
-                control.Controls[0].Text = text_box.Text + ": ";
-            }
-        }
-
-        private void logValueToolStripTextBox_Click(object sender, EventArgs e)
-        {
-            FlowLayoutPanel control = menu_source as FlowLayoutPanel;
-            Tags tags = control.Tag as Tags;
-            ToolStripMenuItem menu_item = sender as ToolStripMenuItem;
-            if (tags["log"] == "yes")
-            {
-                tags["log"] = "no";
-                menu_item.Checked = false;
-            }
-            else
-            {
-                tags["log"] = "yes";
-                menu_item.Checked = true;
-            }
-        }
-
-        private void removeControlToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            ToolStripMenuItem menu_item = sender as ToolStripMenuItem;
-            FlowLayoutPanel control = menu_source as FlowLayoutPanel;
-            control.Parent.Controls.Remove(menu_source);
         }
     }
 }

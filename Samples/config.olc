@@ -1,52 +1,65 @@
-<!--OpenLab Config-->
+﻿<?xml version="1.0" encoding="utf-8"?>
 <config>
-  <version>1.0</version>
-  <dependency>Meter</dependency>
-  <dependency>Spinner</dependency>
-  <dependency>Toggle</dependency>
-  <name>Reactor Control</name>
-  <width>320</width>
-  <height>204</height>
+  <type>OpenLab</type>
+  <version>1.0.5750.1638</version>
+  <label>Fusor Control</label>
+  <width>670</width>
+  <height>448</height>
   <group>
     <label>Power Supply</label>
-    <x>31</x>
-    <y>43</y>
-    <width>241</width>
-    <height>96</height>
+    <x>35</x>
+    <y>46</y>
+    <width>178</width>
+    <height>122</height>
     <control>
-      <plugin>Meter</plugin>
-      <label>kV</label>
-      <x>12</x>
-      <y>29</y>
-      <log>yes</log>
-      <get_command>12</get_command>
-    </control>
-    <control>
-      <plugin>Meter</plugin>
-      <label>mA</label>
-      <x>12</x>
-      <y>64</y>
-      <log>yes</log>
-      <get_command>13</get_command>
-    </control>
-    <control>
-      <plugin>Spinner</plugin>
-      <label>kV</label>
-      <x>89</x>
-      <y>57</y>
-      <minimum>0</minimum>
-      <maximum>35</maximum>
-      <decimal_places>1</decimal_places>
-      <increment>0.1</increment>
-      <set_command>8 </set_command>
-    </control>
-    <control>
-      <plugin>Toggle</plugin>
+      <type>Toggle</type>
+      <version>1.0.5750.1638</version>
       <label>HV</label>
+      <x>17</x>
+      <y>74</y>
+      <log>true</log>
+      <settings>
+        <on_command>HV_ON</on_command>
+        <off_command>HV_OFF</off_command>
+        <state></state>
+      </settings>
+    </control>
+    <control>
+      <type>Spinner</type>
+      <version>1.0.5750.1638</version>
+      <label>kV</label>
+      <x>17</x>
+      <y>47</y>
+      <log>true</log>
+      <settings>
+        <minimum>0</minimum>
+        <maximum>35</maximum>
+        <increment>1</increment>
+        <decimal_places>0</decimal_places>
+        <set_command>SET_KV </set_command>
+      </settings>
+    </control>
+    <control>
+      <type>Meter</type>
+      <version>1.0.5750.1638</version>
+      <label>mA</label>
       <x>87</x>
-      <y>20</y>
-      <on_command>7 1</on_command>
-      <off_command>7 0</off_command>
+      <y>26</y>
+      <log>true</log>
+      <settings>
+        <get_command>GET_MA</get_command>
+      </settings>
+    </control>
+    <control>
+      <type>Meter</type>
+      <version>1.0.5750.1638</version>
+      <label>kV</label>
+      <x>17</x>
+      <y>26</y>
+      <log>true</log>
+      <settings>
+        <get_command>GET_KV</get_command>
+      </settings>
     </control>
   </group>
 </config>
