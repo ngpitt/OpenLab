@@ -54,7 +54,7 @@ namespace Spinner
 
         public string GetValue(OpenLab.Control Control)
         {
-            Control.SerialPort.WriteLine(Control.Settings["get_command"]);
+            Control.SerialPort.Write(Control.Settings["get_command"] + "\n");
 
             return Control.SerialPort.ReadLine();
         }

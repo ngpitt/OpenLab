@@ -76,6 +76,10 @@ namespace OpenLab
             ContextMenuStrip.Enabled = true;
             Enabled = true;
 
+            MouseUp += new MouseEventHandler(MouseUpEvent);
+            MouseDown += new MouseEventHandler(MouseDownEvent);
+            MouseMove += new MouseEventHandler(MouseMoveEvent);
+
             foreach (var control in Controls.OfType<Control>())
             {
                 control.EnableEdit();
@@ -86,6 +90,10 @@ namespace OpenLab
         {
             ContextMenuStrip.Enabled = false;
             Enabled = false;
+
+            MouseUp -= new MouseEventHandler(MouseUpEvent);
+            MouseDown -= new MouseEventHandler(MouseDownEvent);
+            MouseMove -= new MouseEventHandler(MouseMoveEvent);
 
             foreach (var control in Controls.OfType<Control>())
             {
@@ -123,10 +131,6 @@ namespace OpenLab
                 AddControlMenuItem,
                 RemoveGroupMenuItem
             });
-
-            MouseUp += new MouseEventHandler(MouseUpEvent);
-            MouseDown += new MouseEventHandler(MouseDownEvent);
-            MouseMove += new MouseEventHandler(MouseMoveEvent);
         }
 
         private void ContextMenuStrip_Opening(object Sender, CancelEventArgs CancelEventArgs)

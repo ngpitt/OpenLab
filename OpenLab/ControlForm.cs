@@ -342,8 +342,7 @@ namespace OpenLab
 
         private void UpdateBackgroundWorker_DoWork(object Sender, DoWorkEventArgs DoWorkEventArgs)
         {
-            long sleep;
-            ulong time = 0;
+            int sleep;
             var controls = new List<Control>();
             var values = new List<string>();
             var stopwatch = new Stopwatch();
@@ -396,11 +395,11 @@ namespace OpenLab
                 }
             }
 
+            stopwatch.Start();
+
             while (!UpdateBackgroundWorker.CancellationPending)
             {
-                stopwatch.Restart();
-                values.Clear();
-                values.Add(time.ToString());
+                values.Add(stopwatch.ElapsedMilliseconds.ToString());
 
                 foreach (var control in controls)
                 {
@@ -436,12 +435,12 @@ namespace OpenLab
                     }
                 }
 
-                time += (ulong)UpdateInterval;
-                sleep = UpdateInterval - stopwatch.ElapsedMilliseconds;
+                values.Clear();
+                sleep = UpdateInterval - (int)(stopwatch.ElapsedMilliseconds % UpdateInterval);
 
                 if (sleep > 0)
                 {
-                    Thread.Sleep((int)sleep);
+                    Thread.Sleep(sleep);
                 }
             }
         }

@@ -115,6 +115,10 @@ namespace OpenLab
             ContextMenuStrip.Enabled = true;
             Enabled = true;
 
+            MouseDown += new MouseEventHandler(MouseDownEvent);
+            MouseMove += new MouseEventHandler(MouseMoveEvent);
+            MouseUp += new MouseEventHandler(MouseUpEvent);
+
             foreach (System.Windows.Forms.Control control in Controls)
             {
                 control.Enabled = false;
@@ -126,6 +130,15 @@ namespace OpenLab
             BorderStyle = BorderStyle.None;
             ContextMenuStrip.Enabled = false;
             Enabled = false;
+
+            MouseDown -= new MouseEventHandler(MouseDownEvent);
+            MouseMove -= new MouseEventHandler(MouseMoveEvent);
+            MouseUp -= new MouseEventHandler(MouseUpEvent);
+
+            foreach (System.Windows.Forms.Control control in Controls)
+            {
+                control.Enabled = true;
+            }
         }
 
         public void SetSerialPort(SerialPort SerialPort)
@@ -175,10 +188,6 @@ namespace OpenLab
             });
 
             ContextMenuStrip.Items.AddRange(Plugin.ContextMenuItems(this));
-
-            MouseDown += new MouseEventHandler(MouseDownEvent);
-            MouseMove += new MouseEventHandler(MouseMoveEvent);
-            MouseUp += new MouseEventHandler(MouseUpEvent);
         }
 
         private void ContextMenuStrip_Opening(object Sender, CancelEventArgs CancelEventArgs)
