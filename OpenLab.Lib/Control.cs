@@ -7,15 +7,19 @@ using System.Linq;
 using System.Windows.Forms;
 using System.Xml.Linq;
 
-namespace OpenLab
+namespace OpenLab.Lib
 {
     public class Control : FlowLayoutPanel
     {
-        public string Label
+        public override string Text
         {
             get
             {
-                return Plugin.GetLabel(this);
+                return ControlPlugin.GetLabel(this);
+            }
+            set
+            {
+                ControlPlugin.SetLabel(this, value);
             }
         }
         public bool Log
@@ -27,9 +31,9 @@ namespace OpenLab
         }
         public Dictionary<string, string> Settings { get; private set; }
         public SerialPort SerialPort { get; private set; }
-        public IControlPlugin Plugin { get; private set; }
+        public IControlPlugin ControlPlugin { get; private set; }
         public delegate void SetValueDelagate_T(string Value);
-        public SetValueDelagate_T SetValueDelagate; 
+        public SetValueDelagate_T SetValueDelagate;
 
         private bool MouseIsDown = false;
         private Point OrigionalControlLocation, OrigionalMousePosition;
@@ -39,7 +43,7 @@ namespace OpenLab
         private ToolStripMenuItem LogValueMenuItem = new ToolStripMenuItem("Log Value");
         private ToolStripMenuItem RemoveControlMenuItem = new ToolStripMenuItem("Remove Control");
 
-        public static Control Create(IControlPlugin Plugin, Point Location, bool LoggingEnabled)
+        public static Control FromLocation(IControlPlugin Plugin, Point Location, bool LoggingEnabled)
         {
             var control = new Control(Plugin, Location);
 
@@ -47,12 +51,12 @@ namespace OpenLab
             control.LogValueMenuItem.Checked = false;
             Plugin.Create(control);
             Plugin.LoadSettings(control);
-            Plugin.SetLabel(control, Plugin.GetType().Assembly.GetName().Name);
+            control.Text = Plugin.GetType().Assembly.GetName().Name;
 
             return control;
         }
 
-        public static Control OpenConfig(IControlPlugin Plugin, XElement Config, bool LoggingEnabled)
+        public static Control FromConfig(IControlPlugin Plugin, XElement Config, bool LoggingEnabled)
         {
             var x = Convert.ToInt32(Config.Element("x").Value);
             var y = Convert.ToInt32(Config.Element("y").Value);
@@ -68,27 +72,29 @@ namespace OpenLab
             }
 
             Plugin.LoadSettings(control);
-            Plugin.SetLabel(control, Config.Element("label").Value);
+            control.Text = Config.Element("label").Value;
 
             return control;
         }
 
-        public Control Copy(Point Location)
+        public static Control Copy(Control Control)
         {
-            var newControl = new Control(Plugin, Location);
+            var newControl = new Control(Control.ControlPlugin, Control.Location);
 
-            newControl.LogValueMenuItem.Checked = Log;
-            Plugin.Create(this);
+            newControl.LogValueMenuItem.Checked = Control.Log;
+            Control.ControlPlugin.Create(newControl);
 
-            foreach (var setting in Settings)
+            foreach (var setting in Control.Settings)
             {
                 newControl.Settings[setting.Key] = setting.Value;
             }
 
+            newControl.Text = Control.Text;
+
             return newControl;
         }
 
-        public XElement Config()
+        public XElement GetConfig()
         {
             var settingsConfig = new List<XElement>();
 
@@ -99,25 +105,25 @@ namespace OpenLab
 
             return
                 new XElement("control",
-                    new XElement("type", Plugin.GetType().Assembly.GetName().Name),
-                    new XElement("version", Plugin.GetType().Assembly.GetName().Version),
-                    new XElement("label", Label),
+                    new XElement("type", ControlPlugin.GetType().Assembly.GetName().Name),
+                    new XElement("version", ControlPlugin.GetType().Assembly.GetName().Version),
+                    new XElement("label", Text),
                     new XElement("x", Location.X),
                     new XElement("y", Location.Y),
                     new XElement("log", Log),
                     new XElement("settings", settingsConfig)
                 );
         }
-        
+
         public void EnableEdit()
         {
             BorderStyle = BorderStyle.FixedSingle;
             ContextMenuStrip.Enabled = true;
             Enabled = true;
 
-            MouseDown += new MouseEventHandler(MouseDownEvent);
-            MouseMove += new MouseEventHandler(MouseMoveEvent);
-            MouseUp += new MouseEventHandler(MouseUpEvent);
+            MouseDown += new MouseEventHandler(Control_MouseDown);
+            MouseMove += new MouseEventHandler(Control_MouseMove);
+            MouseUp += new MouseEventHandler(Control_MouseUp);
 
             foreach (System.Windows.Forms.Control control in Controls)
             {
@@ -131,9 +137,9 @@ namespace OpenLab
             ContextMenuStrip.Enabled = false;
             Enabled = false;
 
-            MouseDown -= new MouseEventHandler(MouseDownEvent);
-            MouseMove -= new MouseEventHandler(MouseMoveEvent);
-            MouseUp -= new MouseEventHandler(MouseUpEvent);
+            MouseDown -= new MouseEventHandler(Control_MouseDown);
+            MouseMove -= new MouseEventHandler(Control_MouseMove);
+            MouseUp -= new MouseEventHandler(Control_MouseUp);
 
             foreach (System.Windows.Forms.Control control in Controls)
             {
@@ -148,7 +154,7 @@ namespace OpenLab
 
         public string GetValue()
         {
-            return Plugin.GetValue(this);
+            return ControlPlugin.GetValue(this);
         }
 
         public T GetContextMenuItem<T>(string Name) where T : ToolStripItem
@@ -158,7 +164,7 @@ namespace OpenLab
 
         private void SetValue(string Value)
         {
-            Plugin.SetValue(this, Value);
+            ControlPlugin.SetValue(this, Value);
         }
 
         private Control(IControlPlugin Plugin, Point Location)
@@ -166,7 +172,7 @@ namespace OpenLab
             AutoSize = true;
             AutoSizeMode = AutoSizeMode.GrowAndShrink;
 
-            this.Plugin = Plugin;
+            this.ControlPlugin = Plugin;
             this.Location = Location;
             Settings = new Dictionary<string, string>();
             SetValueDelagate = new SetValueDelagate_T(SetValue);
@@ -187,7 +193,7 @@ namespace OpenLab
                 new ToolStripSeparator()
             });
 
-            ContextMenuStrip.Items.AddRange(Plugin.ContextMenuItems(this));
+            ContextMenuStrip.Items.AddRange(Plugin.GetContextMenuItems(this));
         }
 
         private void ContextMenuStrip_Opening(object Sender, CancelEventArgs CancelEventArgs)
@@ -198,13 +204,13 @@ namespace OpenLab
                 return;
             }
 
-            ControlLabelTextBox.Text = Plugin.GetLabel(this);
-            Plugin.ContextMenuOpening(this);
+            ControlLabelTextBox.Text = Text;
+            ControlPlugin.ContextMenuOpening(this);
         }
 
         private void ControlLabelTextBox_TextChanged(object Sender, EventArgs EventArgs)
         {
-            Plugin.SetLabel(this, ControlLabelTextBox.Text);
+            Text = ControlLabelTextBox.Text;
         }
 
         private void RemoveControlMenuItem_Click(object Sender, EventArgs EventArgs)
@@ -212,19 +218,19 @@ namespace OpenLab
             Parent.Controls.Remove(this);
         }
 
-        private void MouseDownEvent(object Sender, MouseEventArgs MouseEventArgs)
+        private void Control_MouseDown(object Sender, MouseEventArgs MouseEventArgs)
         {
             OrigionalMousePosition = Parent.PointToClient(Cursor.Position);
             OrigionalControlLocation = Location;
             MouseIsDown = true;
         }
 
-        private void MouseUpEvent(object Sender, MouseEventArgs MouseEventArgs)
+        private void Control_MouseUp(object Sender, MouseEventArgs MouseEventArgs)
         {
             MouseIsDown = false;
         }
 
-        private void MouseMoveEvent(object Sender, MouseEventArgs MouseEventArgs)
+        private void Control_MouseMove(object Sender, MouseEventArgs MouseEventArgs)
         {
             Point newMousePosition = Parent.PointToClient(Cursor.Position),
                 mouseDifference = new Point(OrigionalMousePosition.X - newMousePosition.X, OrigionalMousePosition.Y - newMousePosition.Y);

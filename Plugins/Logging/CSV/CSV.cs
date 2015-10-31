@@ -1,9 +1,8 @@
 ﻿using System.IO;
-using System.Reflection;
 using System.Collections.Generic;
-using OpenLab;
+using OpenLab.Lib;
 
-namespace CSV
+namespace OpenLab.Plugins.Logging
 {
     public class CSV : ILoggingPlugin
     {

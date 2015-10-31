@@ -1,14 +1,14 @@
 ﻿using System;
+using System.Linq;
 using System.Drawing;
 using System.Windows.Forms;
-using OpenLab;
-using System.Linq;
+using OpenLab.Lib;
 
-namespace Spinner
+namespace OpenLab.Plugins.Controls
 {
     public partial class Toggle : IControlPlugin
     {
-        public void Create(OpenLab.Control Control)
+        public void Create(OpenLab.Lib.Control Control)
         {
             var label = new Label();
             var onButton = new Button();
@@ -37,12 +37,12 @@ namespace Spinner
             Control.Settings.Add("state", string.Empty);
         }
 
-        public void LoadSettings(OpenLab.Control Control)
+        public void LoadSettings(OpenLab.Lib.Control Control)
         {
             // Nothing to do!
         }
 
-        public ToolStripItem[] ContextMenuItems(OpenLab.Control Control)
+        public ToolStripItem[] GetContextMenuItems(OpenLab.Lib.Control Control)
         {
             var onCommandMenuItem = new ToolStripMenuItem("On Command");
             var onCommandTextBox = new ToolStripTextBox("On Command Text Box");
@@ -63,29 +63,29 @@ namespace Spinner
             };
         }
 
-        public string GetLabel(OpenLab.Control Control)
+        public string GetLabel(OpenLab.Lib.Control Control)
         {
             var label = Control.Controls.OfType<Label>().First();
 
             return label.Text.Substring(0, label.Text.Length - 1);
         }
 
-        public void SetLabel(OpenLab.Control Control, string Label)
+        public void SetLabel(OpenLab.Lib.Control Control, string Label)
         {
             Control.Controls.OfType<Label>().First().Text = string.Format("{0}:", Label);
         }
 
-        public string GetValue(OpenLab.Control Control)
+        public string GetValue(OpenLab.Lib.Control Control)
         {
             return Control.Settings["state"];
         }
 
-        public void SetValue(OpenLab.Control Control, string Value)
+        public void SetValue(OpenLab.Lib.Control Control, string Value)
         {
             // Nothing to do!
         }
 
-        public void ContextMenuOpening(OpenLab.Control Control)
+        public void ContextMenuOpening(OpenLab.Lib.Control Control)
         {
             Control.GetContextMenuItem<ToolStripTextBox>("On Command Text Box").Text = Control.Settings["on_command"];
             Control.GetContextMenuItem<ToolStripTextBox>("Off Command Text Box").Text = Control.Settings["off_command"];
@@ -94,7 +94,7 @@ namespace Spinner
         private void OnButton_Click(object Sender, EventArgs EventArgs)
         {
             var button = (Button)Sender;
-            var control = (OpenLab.Control)button.Tag;
+            var control = (OpenLab.Lib.Control)button.Tag;
 
             control.SerialPort.WriteLine(control.Settings["on_command"]);
             control.Settings["state"] = "On";
@@ -103,7 +103,7 @@ namespace Spinner
         private void OffButton_Click(object Sender, EventArgs EventArgs)
         {
             var button = (Button)Sender;
-            var control = (OpenLab.Control)button.Tag;
+            var control = (OpenLab.Lib.Control)button.Tag;
 
             control.SerialPort.WriteLine(control.Settings["off_command"]);
             control.Settings["state"] = "Off";
@@ -112,7 +112,7 @@ namespace Spinner
         private void OnCommandTextBox_TextChanged(object Sender, EventArgs EventArgs)
         {
             var textBox = (ToolStripTextBox)Sender;
-            var control = (OpenLab.Control)textBox.Tag;
+            var control = (OpenLab.Lib.Control)textBox.Tag;
 
             control.Settings["on_command"] = textBox.Text;
         }
@@ -120,7 +120,7 @@ namespace Spinner
         private void OffCommandTextBox_TextChanged(object Sender, EventArgs EventArgs)
         {
             var textBox = (ToolStripTextBox)Sender;
-            var control = (OpenLab.Control)textBox.Tag;
+            var control = (OpenLab.Lib.Control)textBox.Tag;
 
             control.Settings["off_command"] = textBox.Text;
         }

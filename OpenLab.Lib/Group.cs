@@ -6,11 +6,11 @@ using System.Linq;
 using System.Windows.Forms;
 using System.Xml.Linq;
 
-namespace OpenLab
+namespace OpenLab.Lib
 {
     public class Group : GroupBox
     {
-        private IEnumerable<IControlPlugin> ControlPlugins;
+        public IEnumerable<IControlPlugin> ControlPlugins;
         private bool LoggingEnabled, MouseIsDown = false, Resizing = false;
         private Point ContextMenuLocation, OrigionalControlLocation, OrigionalMousePosition;
         private Size OrigionalControlSize;
@@ -18,14 +18,14 @@ namespace OpenLab
         private ToolStripMenuItem GroupLabelMenuItem = new ToolStripMenuItem("Group Label");
         private ToolStripTextBox GroupLabelTextBox = new ToolStripTextBox("Group Label");
         private ToolStripMenuItem AddControlMenuItem = new ToolStripMenuItem("Add Control");
-        private ToolStripMenuItem RemoveGroupMenuItem = new ToolStripMenuItem("Remove Group"); 
+        private ToolStripMenuItem RemoveGroupMenuItem = new ToolStripMenuItem("Remove Group");
 
-        public static Group Create(Point Location, IEnumerable<IControlPlugin> ControlPlugins)
+        public static Group FromLocation(IEnumerable<IControlPlugin> Plugins, Point Location)
         {
-            return new Group("Group", Location, new Size(300, 100), ControlPlugins);
+            return new Group("Group", Location, new Size(300, 100), Plugins);
         }
 
-        public static Group OpenConfig(XElement Config, IEnumerable<IControlPlugin> ControlPlugins, bool LoggingEnabled)
+        public static Group FromConfig(IEnumerable<IControlPlugin> ControlPlugins, XElement Config, bool LoggingEnabled)
         {
             var x = Convert.ToInt32(Config.Element("x").Value);
             var y = Convert.ToInt32(Config.Element("y").Value);
@@ -39,7 +39,7 @@ namespace OpenLab
             {
                 var controlType = controlConfig.Element("type").Value;
                 var controlPlugin = ControlPlugins.First(plugin => plugin.GetType().Assembly.GetName().Name == controlType);
-                var control = Control.OpenConfig(controlPlugin, controlConfig, LoggingEnabled);
+                var control = Control.FromConfig(controlPlugin, controlConfig, LoggingEnabled);
 
                 group.Controls.Add(control);
             }
@@ -47,12 +47,19 @@ namespace OpenLab
             return group;
         }
 
-        public Group Copy(Point Location)
+        public static Group Copy(Group Group)
         {
-            return new Group(Text, Location, Size, ControlPlugins);
+            var newGroup = new Group(Group.Text, Group.Location, Group.Size, Group.ControlPlugins);
+
+            foreach (var control in Group.Controls.OfType<Control>())
+            {
+                newGroup.Controls.Add(Control.Copy(control));
+            }
+
+            return newGroup;
         }
 
-        public XElement Config()
+        public XElement GetConfig()
         {
             var config =
                 new XElement("group",
@@ -65,7 +72,7 @@ namespace OpenLab
 
             foreach (var control in Controls.OfType<Control>())
             {
-                config.Add(control.Config());
+                config.Add(control.GetConfig());
             }
 
             return config;
@@ -76,9 +83,9 @@ namespace OpenLab
             ContextMenuStrip.Enabled = true;
             Enabled = true;
 
-            MouseUp += new MouseEventHandler(MouseUpEvent);
-            MouseDown += new MouseEventHandler(MouseDownEvent);
-            MouseMove += new MouseEventHandler(MouseMoveEvent);
+            MouseUp += new MouseEventHandler(Group_MouseUp);
+            MouseDown += new MouseEventHandler(Group_MouseDown);
+            MouseMove += new MouseEventHandler(Group_MouseMove);
 
             foreach (var control in Controls.OfType<Control>())
             {
@@ -91,9 +98,9 @@ namespace OpenLab
             ContextMenuStrip.Enabled = false;
             Enabled = false;
 
-            MouseUp -= new MouseEventHandler(MouseUpEvent);
-            MouseDown -= new MouseEventHandler(MouseDownEvent);
-            MouseMove -= new MouseEventHandler(MouseMoveEvent);
+            MouseUp -= new MouseEventHandler(Group_MouseUp);
+            MouseDown -= new MouseEventHandler(Group_MouseDown);
+            MouseMove -= new MouseEventHandler(Group_MouseMove);
 
             foreach (var control in Controls.OfType<Control>())
             {
@@ -113,7 +120,7 @@ namespace OpenLab
 
             GroupLabelMenuItem.DropDownItems.Add(GroupLabelTextBox);
             GroupLabelTextBox.TextChanged += new EventHandler(GroupLabelTextBox_TextChanged);
-            
+
             foreach (var controlPlugin in ControlPlugins)
             {
                 var addControlMenuItem = new ToolStripMenuItem(controlPlugin.GetType().Assembly.GetName().Name);
@@ -153,7 +160,7 @@ namespace OpenLab
         private void AddControlMenuItem_Click(object Sender, EventArgs EventArgs)
         {
             var controlPlugin = (IControlPlugin)((ToolStripMenuItem)Sender).Tag;
-            var control = Control.Create(controlPlugin, ContextMenuLocation, LoggingEnabled);
+            var control = Control.FromLocation(controlPlugin, ContextMenuLocation, LoggingEnabled);
 
             Controls.Add(control);
             control.BringToFront();
@@ -165,7 +172,7 @@ namespace OpenLab
             Parent.Controls.Remove(this);
         }
 
-        private void MouseDownEvent(object Sender, MouseEventArgs MouseEventArgs)
+        private void Group_MouseDown(object Sender, MouseEventArgs MouseEventArgs)
         {
             OrigionalMousePosition = Parent.PointToClient(Cursor.Position);
             OrigionalControlLocation = Location;
@@ -178,13 +185,13 @@ namespace OpenLab
             }
         }
 
-        private void MouseUpEvent(object Sender, MouseEventArgs MouseEventArgs)
+        private void Group_MouseUp(object Sender, MouseEventArgs MouseEventArgs)
         {
             MouseIsDown = false;
             Resizing = false;
         }
 
-        private void MouseMoveEvent(object Sender, MouseEventArgs MouseEventArgs)
+        private void Group_MouseMove(object Sender, MouseEventArgs MouseEventArgs)
         {
             var newMousePosition = Parent.PointToClient(Cursor.Position);
             var mouseDifference = new Point(OrigionalMousePosition.X - newMousePosition.X, OrigionalMousePosition.Y - newMousePosition.Y);
