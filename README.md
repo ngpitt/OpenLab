@@ -1,4 +1,6 @@
 #OpenLab
+[![Build Status (Master)](https://teamcity.xphysics.net/app/rest/builds/buildType:OpenLab_Master/statusIcon)](https://teamcity.xphysics.net/viewType.html?buildTypeId=OpenLab_Master)
+[![Build Status (Dev)](https://teamcity.xphysics.net/app/rest/builds/buildType:OpenLab_Dev/statusIcon)](https://teamcity.xphysics.net/viewType.html?buildTypeId=OpenLab_Dev)
 
 ## What
 OpenLab's goal is to provide lab equipment users a fully customizable interface for controlling and collecting data from their equipment.

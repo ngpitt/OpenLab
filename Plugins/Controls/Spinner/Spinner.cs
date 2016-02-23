@@ -1,15 +1,14 @@
 ﻿using System;
+using System.Linq;
 using System.Drawing;
 using System.Windows.Forms;
-using OpenLab;
-using System.Linq;
+using OpenLab.Lib;
 
-namespace Spinner
+namespace OpenLab.Plugins.Controls
 {
     public partial class Spinner : IControlPlugin
     {
-
-        public void Create(OpenLab.Control Control)
+        public void Create(Lib.Control Control)
         {
             var label = new Label();
             var padding = new Padding();
@@ -32,7 +31,7 @@ namespace Spinner
             Control.Settings.Add("set_command", string.Empty);
         }
 
-        public void LoadSettings(OpenLab.Control Control)
+        public void LoadSettings(Lib.Control Control)
         {
             var numericUpDown = Control.Controls.OfType<NumericUpDown>().First();
 
@@ -42,7 +41,7 @@ namespace Spinner
             numericUpDown.DecimalPlaces = Convert.ToInt32(Control.Settings["decimal_places"]);
         }
 
-        public ToolStripItem[] ContextMenuItems(OpenLab.Control Control)
+        public ToolStripItem[] GetContextMenuItems(Lib.Control Control)
         {
             var minimumMenuItem = new ToolStripMenuItem("Minimum");
             var minimumTextBox = new ToolStripTextBox("Minimum Text Box");
@@ -81,7 +80,7 @@ namespace Spinner
             };
         }
 
-        public void ContextMenuOpening(OpenLab.Control Control)
+        public void ContextMenuOpening(Lib.Control Control)
         {
             Control.GetContextMenuItem<ToolStripTextBox>("Minimum Text Box").Text = Control.Settings["minimum"];
             Control.GetContextMenuItem<ToolStripTextBox>("Maximum Text Box").Text = Control.Settings["maximum"];
@@ -90,24 +89,24 @@ namespace Spinner
             Control.GetContextMenuItem<ToolStripTextBox>("Set Command Text Box").Text = Control.Settings["set_command"];
         }
 
-        public string GetLabel(OpenLab.Control Control)
+        public string GetLabel(Lib.Control Control)
         {
             var label = Control.Controls.OfType<Label>().First();
 
             return label.Text.Substring(0, label.Text.Length - 1);
         }
 
-        public void SetLabel(OpenLab.Control Control, string Label)
+        public void SetLabel(Lib.Control Control, string Label)
         {
             Control.Controls.OfType<Label>().First().Text = string.Format("{0}:", Label);
         }
 
-        public string GetValue(OpenLab.Control Control)
+        public string GetValue(Lib.Control Control)
         {
             return Control.Controls.OfType<NumericUpDown>().First().Value.ToString();
         }
 
-        public void SetValue(OpenLab.Control Control, string Value)
+        public void SetValue(Lib.Control Control, string Value)
         {
             // Nothing to do!
         }
@@ -115,7 +114,7 @@ namespace Spinner
         private void NumericUpDown_ValueChanged(object Sender, EventArgs EventArgs)
         {
             var numericUpDown = (NumericUpDown)Sender;
-            var control = (OpenLab.Control)numericUpDown.Tag;
+            var control = (Lib.Control)numericUpDown.Tag;
 
             control.SerialPort.WriteLine(string.Format("{0}{1}", control.Settings["set_command"], numericUpDown.Value));
         }
@@ -123,7 +122,7 @@ namespace Spinner
         private void MinimumTextBox_TextChanged(object Sender, EventArgs EventArgs)
         {
             var textBox = (ToolStripTextBox)Sender;
-            var control = (OpenLab.Control)textBox.Tag;
+            var control = (Lib.Control)textBox.Tag;
 
             control.Settings["minimum"] = textBox.Text;
         }
@@ -131,7 +130,7 @@ namespace Spinner
         private void MaximumTextBox_TextChanged(object Sender, EventArgs EventArgs)
         {
             var textBox = (ToolStripTextBox)Sender;
-            var control = (OpenLab.Control)textBox.Tag;
+            var control = (Lib.Control)textBox.Tag;
 
             control.Settings["maximum"] = textBox.Text;
         }
@@ -139,7 +138,7 @@ namespace Spinner
         private void IncrementTextBox_TextChanged(object Sender, EventArgs EventArgs)
         {
             var textBox = (ToolStripTextBox)Sender;
-            var control = (OpenLab.Control)textBox.Tag;
+            var control = (Lib.Control)textBox.Tag;
 
             control.Settings["increment"] = textBox.Text;
         }
@@ -147,7 +146,7 @@ namespace Spinner
         private void DecimalPlacesTextBox_TextChanged(object Sender, EventArgs EventArgs)
         {
             var textBox = (ToolStripTextBox)Sender;
-            var control = (OpenLab.Control)textBox.Tag;
+            var control = (Lib.Control)textBox.Tag;
 
             control.Settings["decimal_places"] = textBox.Text;
         }
@@ -155,7 +154,7 @@ namespace Spinner
         private void SetCommandTextBox_TextChanged(object Sender, EventArgs EventArgs)
         {
             var textBox = (ToolStripTextBox)Sender;
-            var control = (OpenLab.Control)textBox.Tag;
+            var control = (Lib.Control)textBox.Tag;
 
             control.Settings["set_command"] = textBox.Text;
         }

@@ -1,0 +1,116 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<board xmlns="OpenLabBoard" version="1.0.5754.25708">
+    <name>Arduino Uno</name>
+    <pin name="0">
+        <mode>DIGITAL_INPUT</mode>
+        <mode>DIGITAL_INPUT_PULLUP</mode>
+        <mode>DIGITAL_OUTPUT</mode>
+    </pin>
+    <pin name="1">
+        <mode>DIGITAL_INPUT</mode>
+        <mode>DIGITAL_INPUT_PULLUP</mode>
+        <mode>DIGITAL_OUTPUT</mode>
+    </pin>
+    <pin name="2">
+        <mode>DIGITAL_INPUT</mode>
+        <mode>DIGITAL_INPUT_PULLUP</mode>
+        <mode>DIGITAL_OUTPUT</mode>
+    </pin>
+    <pin name="3">
+        <mode>DIGITAL_INPUT</mode>
+        <mode>DIGITAL_INPUT_PULLUP</mode>
+        <mode>DIGITAL_OUTPUT</mode>
+        <mode>ANALOG_OUTPUT</mode>
+    </pin>
+    <pin name="4">
+        <mode>DIGITAL_INPUT</mode>
+        <mode>DIGITAL_INPUT_PULLUP</mode>
+        <mode>DIGITAL_OUTPUT</mode>
+    </pin>
+    <pin name="5">
+        <mode>DIGITAL_INPUT</mode>
+        <mode>DIGITAL_INPUT_PULLUP</mode>
+        <mode>DIGITAL_OUTPUT</mode>
+        <mode>ANALOG_OUTPUT</mode>
+    </pin>
+    <pin name="6">
+        <mode>DIGITAL_INPUT</mode>
+        <mode>DIGITAL_INPUT_PULLUP</mode>
+        <mode>DIGITAL_OUTPUT</mode>
+        <mode>ANALOG_OUTPUT</mode>
+    </pin>
+    <pin name="7">
+        <mode>DIGITAL_INPUT</mode>
+        <mode>DIGITAL_INPUT_PULLUP</mode>
+        <mode>DIGITAL_OUTPUT</mode>
+    </pin>
+    <pin name="8">
+        <mode>DIGITAL_INPUT</mode>
+        <mode>DIGITAL_INPUT_PULLUP</mode>
+        <mode>DIGITAL_OUTPUT</mode>
+    </pin>
+    <pin name="9">
+        <mode>DIGITAL_INPUT</mode>
+        <mode>DIGITAL_INPUT_PULLUP</mode>
+        <mode>DIGITAL_OUTPUT</mode>
+        <mode>ANALOG_OUTPUT</mode>
+    </pin>
+    <pin name="10">
+        <mode>DIGITAL_INPUT</mode>
+        <mode>DIGITAL_INPUT_PULLUP</mode>
+        <mode>DIGITAL_OUTPUT</mode>
+        <mode>ANALOG_OUTPUT</mode>
+    </pin>
+    <pin name="11">
+        <mode>DIGITAL_INPUT</mode>
+        <mode>DIGITAL_INPUT_PULLUP</mode>
+        <mode>DIGITAL_OUTPUT</mode>
+        <mode>ANALOG_OUTPUT</mode>
+    </pin>
+    <pin name="12">
+        <mode>DIGITAL_INPUT</mode>
+        <mode>DIGITAL_INPUT_PULLUP</mode>
+        <mode>DIGITAL_OUTPUT</mode>
+    </pin>
+    <pin name="13">
+        <mode>DIGITAL_INPUT</mode>
+        <mode>DIGITAL_INPUT_PULLUP</mode>
+        <mode>DIGITAL_OUTPUT</mode>
+    </pin>
+    <pin name="A0">
+        <mode>DIGITAL_INPUT</mode>
+        <mode>DIGITAL_INPUT_PULLUP</mode>
+        <mode>DIGITAL_OUTPUT</mode>
+        <mode>ANALOG_INPUT</mode>
+    </pin>
+    <pin name="A1">
+        <mode>DIGITAL_INPUT</mode>
+        <mode>DIGITAL_INPUT_PULLUP</mode>
+        <mode>DIGITAL_OUTPUT</mode>
+        <mode>ANALOG_INPUT</mode>
+    </pin>
+    <pin name="A2">
+        <mode>DIGITAL_INPUT</mode>
+        <mode>DIGITAL_INPUT_PULLUP</mode>
+        <mode>DIGITAL_OUTPUT</mode>
+        <mode>ANALOG_INPUT</mode>
+    </pin>
+    <pin name="A3">
+        <mode>DIGITAL_INPUT</mode>
+        <mode>DIGITAL_INPUT_PULLUP</mode>
+        <mode>DIGITAL_OUTPUT</mode>
+        <mode>ANALOG_INPUT</mode>
+    </pin>
+    <pin name="A4">
+        <mode>DIGITAL_INPUT</mode>
+        <mode>DIGITAL_INPUT_PULLUP</mode>
+        <mode>DIGITAL_OUTPUT</mode>
+        <mode>ANALOG_INPUT</mode>
+    </pin>
+    <pin name="A5">
+        <mode>DIGITAL_INPUT</mode>
+        <mode>DIGITAL_INPUT_PULLUP</mode>
+        <mode>DIGITAL_OUTPUT</mode>
+        <mode>ANALOG_INPUT</mode>
+    </pin>
+</board>
