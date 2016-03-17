@@ -83,7 +83,9 @@
     <None Include="Samples\config.olc">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Sketches\arduino_uno\arduino_uno.ino" />
+    <None Include="Sketches\arduino_uno\arduino_uno.ino">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
