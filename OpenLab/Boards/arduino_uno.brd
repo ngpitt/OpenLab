@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <board xmlns="http://www.xphysics.net/OpenLab/Board">
-    <version>0.1.5920.18896</version>
+    <version>0.1.5920.19729</version>
     <name>Arduino Uno</name>
     <pin>
         <name>0</name>

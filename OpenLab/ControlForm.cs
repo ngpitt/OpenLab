@@ -86,7 +86,7 @@ namespace OpenLab
                 }
                 catch (Exception Ex)
                 {
-                    throw new Exception($"Error loading plugin {dllPath}. {Ex.Message}");
+                    ShowError($"Error loading plugin {dllPath}. {Ex.Message}");
                 }
             }
         }
@@ -101,7 +101,7 @@ namespace OpenLab
                 }
                 catch (Exception Ex)
                 {
-                    throw new Exception($"Error loading board {boardPath}. {Ex.Message}");
+                    ShowError($"Error loading board {boardPath}. {Ex.Message}");
                 }
             }
 
@@ -622,16 +622,7 @@ namespace OpenLab
             SerialPort.WriteTimeout = Settings.Default.WriteTimeout;
             UpdateInterval = Settings.Default.UpdateInterval;
 
-            var currentPluginPath = string.Empty;
-
-            try
-            {
-                LoadPlugins();
-            }
-            catch (Exception Ex)
-            {
-                ShowError(Ex.Message);
-            }
+            LoadPlugins();
 
             if (!ControlPlugins.Any())
             {
@@ -640,14 +631,7 @@ namespace OpenLab
                 return;
             }
 
-            try
-            {
-                LoadBoards();
-            }
-            catch (Exception Ex)
-            {
-                ShowError(Ex.Message);
-            }
+            LoadBoards();
 
             if (!Boards.Any())
             {
