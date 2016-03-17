@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <config xmlns="http://www.xphysics.net/OpenLab/Config">
-  <version>1.0.5916.19990</version>
+  <version>0.1.5920.18896</version>
   <label>Fusor Control</label>
   <width>460</width>
   <height>260</height>
@@ -13,7 +13,7 @@
     <height>60</height>
     <control>
       <type>Meter</type>
-      <version>1.0.5916.19990</version>
+      <version>0.1.5920.18896</version>
       <label>mTorr</label>
       <x>17</x>
       <y>23</y>
@@ -29,7 +29,7 @@
     <height>60</height>
     <control>
       <type>Meter</type>
-      <version>1.0.5916.19990</version>
+      <version>0.1.5920.18896</version>
       <label>Status</label>
       <x>15</x>
       <y>23</y>
@@ -38,7 +38,7 @@
     </control>
     <control>
       <type>Toggle</type>
-      <version>1.0.5916.19990</version>
+      <version>0.1.5920.18896</version>
       <label>Power</label>
       <x>90</x>
       <y>15</y>
@@ -54,7 +54,7 @@
     <height>80</height>
     <control>
       <type>Toggle</type>
-      <version>1.0.5916.19990</version>
+      <version>0.1.5920.18896</version>
       <label>HV</label>
       <x>98</x>
       <y>15</y>
@@ -63,7 +63,7 @@
     </control>
     <control>
       <type>Spinner</type>
-      <version>1.0.5916.19990</version>
+      <version>0.1.5920.18896</version>
       <label>kV</label>
       <x>102</x>
       <y>46</y>
@@ -88,7 +88,7 @@
     </control>
     <control>
       <type>Meter</type>
-      <version>1.0.5916.19990</version>
+      <version>0.1.5920.18896</version>
       <label>mA</label>
       <x>13</x>
       <y>53</y>
@@ -97,7 +97,7 @@
     </control>
     <control>
       <type>Meter</type>
-      <version>1.0.5916.19990</version>
+      <version>0.1.5920.18896</version>
       <label>kV</label>
       <x>14</x>
       <y>23</y>

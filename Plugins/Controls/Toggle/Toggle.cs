@@ -38,8 +38,7 @@ namespace OpenLab.Plugins.Controls
             Control.Controls.Add(onButton);
             Control.Controls.Add(offButton);
 
-            Control.Text = new Mapping(() => label.Text.Substring(0, label.Text.Length - 1),
-                Value => label.Text = string.Format("{0}:", Value));
+            Control.Text = new Mapping(() => label.Text.Substring(0, label.Text.Length - 1), Value => label.Text = $"{Value}:");
             Control.Value = new Mapping(() => (string)Control.Tag, Value => Control.Tag = Value);
             Control.Value.Set("0");
         }

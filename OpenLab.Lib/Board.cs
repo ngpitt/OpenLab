@@ -33,8 +33,7 @@ namespace OpenLab.Lib
 
             if (configVersion != typeof(Board).Assembly.GetName().Version.Major)
             {
-                throw new Exception(string.Format("This config requires OpenLab v{0}.",
-                    configVersion));
+                throw new Exception($"This board config requires OpenLab v{configVersion}.");
             }
 
             board.Name = Config.Element(Ns + "name").Value;

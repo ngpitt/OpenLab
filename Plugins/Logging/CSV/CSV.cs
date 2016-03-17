@@ -36,7 +36,7 @@ namespace OpenLab.Plugins.Logging
 
         private void WriteLine(IEnumerable<string> Values)
         {
-            LogFile.Write(string.Format("{0}{1}", string.Join(",", Values), Environment.NewLine));
+            LogFile.Write(string.Join(",", Values) + Environment.NewLine);
         }
     }
 }

@@ -59,16 +59,6 @@ namespace OpenLab
             }
         }
 
-        private DialogResult ShowError(string Message)
-        {
-            return MessageBox.Show(Message, "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
-        }
-
-        private DialogResult ShowConfirmation(string Message)
-        {
-            return MessageBox.Show(Message, "OpenLab", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
-        }
-
         public void LoadPlugins()
         {
             foreach (var dllPath in Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory, "*.dll"))
@@ -77,6 +67,13 @@ namespace OpenLab
                 {
                     foreach (var type in Assembly.Load(AssemblyName.GetAssemblyName(dllPath)).GetTypes())
                     {
+                        var pluginVersion = type.Assembly.GetName().Version.Major;
+
+                        if (pluginVersion != GetType().Assembly.GetName().Version.Major)
+                        {
+                            throw new Exception($"This plugin requires OpenLab v{pluginVersion}.");
+                        }
+
                         if (type.GetInterface(typeof(IControlPlugin).FullName) != null)
                         {
                             ControlPlugins.Add((IControlPlugin)Activator.CreateInstance(type));
@@ -87,9 +84,9 @@ namespace OpenLab
                         }
                     }
                 }
-                catch
+                catch (Exception Ex)
                 {
-                    throw new Exception(string.Format("Error loading plugin {0}.", dllPath));
+                    throw new Exception($"Error loading plugin {dllPath}. {Ex.Message}");
                 }
             }
         }
@@ -104,26 +101,11 @@ namespace OpenLab
                 }
                 catch (Exception Ex)
                 {
-                    ShowError(Ex.Message);
-                    throw new Exception(string.Format("Error loading board {0}.", boardPath));
+                    throw new Exception($"Error loading board {boardPath}. {Ex.Message}");
                 }
             }
 
             SetBoardComboBox.Items.AddRange(Boards.Select(b => b.Name).ToArray());
-        }
-
-        private void OpenConfig(string FilePath)
-        {
-            try
-            {
-                FromConfig(XElement.Load(FilePath), "http://www.xphysics.net/OpenLab/Config");
-                Editing = false;
-                SaveConfigDialog.FileName = FilePath;
-            }
-            catch
-            {
-                ShowError($"Error opening config file {FilePath}.");
-            }
         }
 
         public void FromConfig(XElement Config, XNamespace Ns)
@@ -164,25 +146,6 @@ namespace OpenLab
             foreach (var groupConfig in Config.Descendants(Ns + "group"))
             {
                 Controls.Add(Group.FromConfig(ControlPlugins, Board, LoggingEnabled, groupConfig, Ns));
-            }
-        }
-
-        private void SaveConfig(string FileName)
-        {
-            if (Controls.OfType<Group>().Any(g => g.Controls.OfType<Lib.Control>().Any(c => string.IsNullOrWhiteSpace(c.Pin))))
-            {
-                ShowError("One or more controls are not assigned pins.");
-                return;
-            }
-
-            try
-            {
-                ToConfig("http://www.xphysics.net/OpenLab/Config").Save(FileName);
-                Editing = false;
-            }
-            catch
-            {
-                ShowError($"Error saving config file {FileName}.");
             }
         }
 
@@ -361,11 +324,54 @@ namespace OpenLab
         private ToolStripComboBox SetBoardComboBox = new ToolStripComboBox("Set Board");
         private ToolStripMenuItem AddGroupMenuItem = new ToolStripMenuItem("Add Group");
 
+        private DialogResult ShowError(string Message)
+        {
+            return MessageBox.Show(Message, "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+
+        private DialogResult ShowConfirmation(string Message)
+        {
+            return MessageBox.Show(Message, "OpenLab", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+        }
+
+        private void OpenConfig(string FilePath)
+        {
+            try
+            {
+                FromConfig(XElement.Load(FilePath), "http://www.xphysics.net/OpenLab/Config");
+                Editing = false;
+                SaveConfigDialog.FileName = FilePath;
+            }
+            catch
+            {
+                ShowError($"Error opening config file {FilePath}.");
+            }
+        }
+
+        private void SaveConfig(string FileName)
+        {
+            if (Controls.OfType<Group>().Any(g => g.Controls.OfType<Lib.Control>().Any(c => string.IsNullOrWhiteSpace(c.Pin))))
+            {
+                ShowError("One or more controls are not assigned pins.");
+                return;
+            }
+
+            try
+            {
+                ToConfig("http://www.xphysics.net/OpenLab/Config").Save(FileName);
+                Editing = false;
+            }
+            catch
+            {
+                ShowError($"Error saving config file {FileName}.");
+            }
+        }
+
         private bool ResetForm()
         {
             if (!EditConfigMenuItem.Enabled)
             {
-                if (ShowConfirmation("You have unsaved changes.\nDo you want to discard them?") == DialogResult.No)
+                if (ShowConfirmation("You have unsaved changes. Do you want to discard them?") == DialogResult.No)
                 {
                     return false;
                 }
@@ -448,13 +454,13 @@ namespace OpenLab
                 {
                     try
                     {
-                        var value = control.Value.Get();
+                        var value = control.Value.Get().Trim(' ', '\r', '\n');
 
                         BeginInvoke(control.SetValueDelagate, value);
 
                         if (control.Log)
                         {
-                            values.Add(value.Trim(' ', '\r', '\n'));
+                            values.Add(value);
                         }
                     }
                     catch
@@ -630,6 +636,7 @@ namespace OpenLab
             if (!ControlPlugins.Any())
             {
                 ShowError("No control plugins found.");
+                Close();
                 return;
             }
 
@@ -645,6 +652,7 @@ namespace OpenLab
             if (!Boards.Any())
             {
                 ShowError("No board configs found.");
+                Close();
                 return;
             }
 
@@ -670,7 +678,7 @@ namespace OpenLab
             {
                 if (UpdateBackgroundWorker.IsBusy)
                 {
-                    if (ShowConfirmation("The serial port is currently in use.\nDo you want to quit?") == DialogResult.Yes)
+                    if (ShowConfirmation("The serial port is currently in use. Do you want to quit?") == DialogResult.Yes)
                     {
                         UpdateBackgroundWorker.CancelAsync();
                     }
@@ -682,7 +690,7 @@ namespace OpenLab
                 }
                 else
                 {
-                    if (ShowConfirmation("You have unsaved changes.\nDo you want to quit?") == DialogResult.No)
+                    if (ShowConfirmation("You have unsaved changes. Do you want to quit?") == DialogResult.No)
                     {
                         EventArgs.Cancel = true;
                         return;
