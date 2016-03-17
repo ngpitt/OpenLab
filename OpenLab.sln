@@ -1,21 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.23107.0
+VisualStudioVersion = 14.0.24720.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenLab", "OpenLab\OpenLab.csproj", "{5D299693-9E26-4A3A-8280-72776A9F8F9F}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plugins", "Plugins", "{0AA79689-3128-474C-8D78-6D540DACBFB5}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{65121E48-7CD3-44F5-865B-11E9C885B198}"
-	ProjectSection(SolutionItems) = preProject
-		Samples\config.olc = Samples\config.olc
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Boards", "Boards", "{2F947F36-7A3C-474F-BEED-9EA023314EF5}"
-	ProjectSection(SolutionItems) = preProject
-		Boards\arduino_uno.xml = Boards\arduino_uno.xml
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenLab.Test", "OpenLab.Test\OpenLab.Test.csproj", "{5B57B933-986C-4529-A2D4-71C15A0E3639}"
 EndProject

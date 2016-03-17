@@ -1,11 +1,16 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<xs:schema targetNamespace="OpenLabBoard"
+<xs:schema targetNamespace="http://www.xphysics.net/OpenLab/Board"
     elementFormDefault="qualified"
-    xmlns="OpenLabBoard"
+    xmlns="http://www.xphysics.net/OpenLab/Board"
     xmlns:xs="http://www.w3.org/2001/XMLSchema"
 >
-    <xs:simpleType name="mode">
-        <xs:restriction base="xs:string">
+    <xs:simpleType name="version">
+        <xs:restriction base="xs:token">
+            <xs:pattern value="\d+\.\d+\.\d+\.\d+" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="pinMode">
+        <xs:restriction base="xs:token">
             <xs:enumeration value="DIGITAL_INPUT" />
             <xs:enumeration value="DIGITAL_INPUT_PULLUP" />
             <xs:enumeration value="DIGITAL_OUTPUT" />
@@ -13,20 +18,23 @@
             <xs:enumeration value="ANALOG_OUTPUT" />
         </xs:restriction>
     </xs:simpleType>
+    <xs:simpleType name="pinModes">
+        <xs:list itemType="pinMode" />
+    </xs:simpleType>
     <xs:element name="board">
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="name" type="xs:string" minOccurs="1" maxOccurs="1"/>
+                <xs:element name="version" type="version" minOccurs="1" maxOccurs="1" />
+                <xs:element name="name" type="xs:token" minOccurs="1" maxOccurs="1" />
                 <xs:element name="pin" minOccurs="1" maxOccurs="unbounded">
                     <xs:complexType>
                         <xs:sequence>
-                            <xs:element name="mode" minOccurs="1" maxOccurs="unbounded" type="mode" />
+                            <xs:element name="name" type="xs:token" minOccurs="1" maxOccurs="1" />
+                            <xs:element name="modes" minOccurs="1" maxOccurs="1" type="pinModes" />
                         </xs:sequence>
-                        <xs:attribute name="name" type="xs:string" use="required" />
                     </xs:complexType>
                 </xs:element>
             </xs:sequence>
-            <xs:attribute name="version" type="xs:string" use="required" />
         </xs:complexType>
     </xs:element>
 </xs:schema>

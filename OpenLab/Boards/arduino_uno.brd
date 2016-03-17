@@ -1,0 +1,85 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<board xmlns="http://www.xphysics.net/OpenLab/Board">
+    <version>1.0.5754.25708</version>
+    <name>Arduino Uno</name>
+    <pin>
+        <name>0</name>
+        <modes>DIGITAL_INPUT DIGITAL_INPUT_PULLUP DIGITAL_OUTPUT</modes>
+    </pin>
+    <pin>
+        <name>1</name>
+        <modes>DIGITAL_INPUT DIGITAL_INPUT_PULLUP DIGITAL_OUTPUT</modes>
+    </pin>
+    <pin>
+        <name>2</name>
+        <modes>DIGITAL_INPUT DIGITAL_INPUT_PULLUP DIGITAL_OUTPUT</modes>
+    </pin>
+    <pin>
+        <name>3</name>
+        <modes>DIGITAL_INPUT DIGITAL_INPUT_PULLUP DIGITAL_OUTPUT ANALOG_OUTPUT</modes>
+    </pin>
+    <pin>
+        <name>4</name>
+        <modes>DIGITAL_INPUT DIGITAL_INPUT_PULLUP DIGITAL_OUTPUT</modes>
+    </pin>
+    <pin>
+        <name>5</name>
+        <modes>DIGITAL_INPUT DIGITAL_INPUT_PULLUP DIGITAL_OUTPUT ANALOG_OUTPUT</modes>
+    </pin>
+    <pin>
+        <name>6</name>
+        <modes>DIGITAL_INPUT DIGITAL_INPUT_PULLUP DIGITAL_OUTPUT ANALOG_OUTPUT</modes>
+    </pin>
+    <pin>
+        <name>7</name>
+        <modes>DIGITAL_INPUT DIGITAL_INPUT_PULLUP DIGITAL_OUTPUT</modes>
+    </pin>
+    <pin>
+        <name>8</name>
+        <modes>DIGITAL_INPUT DIGITAL_INPUT_PULLUP DIGITAL_OUTPUT</modes>
+    </pin>
+    <pin>
+        <name>9</name>
+        <modes>DIGITAL_INPUT DIGITAL_INPUT_PULLUP DIGITAL_OUTPUT ANALOG_OUTPUT</modes>
+    </pin>
+    <pin>
+        <name>10</name>
+        <modes>DIGITAL_INPUT DIGITAL_INPUT_PULLUP DIGITAL_OUTPUT ANALOG_OUTPUT</modes>
+    </pin>
+    <pin>
+        <name>11</name>
+        <modes>DIGITAL_INPUT DIGITAL_INPUT_PULLUP DIGITAL_OUTPUT ANALOG_OUTPUT</modes>
+    </pin>
+    <pin>
+        <name>12</name>
+        <modes>DIGITAL_INPUT DIGITAL_INPUT_PULLUP DIGITAL_OUTPUT</modes>
+    </pin>
+    <pin>
+        <name>13</name>
+        <modes>DIGITAL_INPUT DIGITAL_INPUT_PULLUP DIGITAL_OUTPUT</modes>
+    </pin>
+    <pin>
+        <name>A0</name>
+        <modes>DIGITAL_INPUT DIGITAL_INPUT_PULLUP DIGITAL_OUTPUT ANALOG_INPUT</modes>
+    </pin>
+    <pin>
+        <name>A1</name>
+        <modes>DIGITAL_INPUT DIGITAL_INPUT_PULLUP DIGITAL_OUTPUT ANALOG_INPUT</modes>
+    </pin>
+    <pin>
+        <name>A2</name>
+        <modes>DIGITAL_INPUT DIGITAL_INPUT_PULLUP DIGITAL_OUTPUT ANALOG_INPUT</modes>
+    </pin>
+    <pin>
+        <name>A3</name>
+        <modes>DIGITAL_INPUT DIGITAL_INPUT_PULLUP DIGITAL_OUTPUT ANALOG_INPUT</modes>
+    </pin>
+    <pin>
+        <name>A4</name>
+        <modes>DIGITAL_INPUT DIGITAL_INPUT_PULLUP DIGITAL_OUTPUT ANALOG_INPUT</modes>
+    </pin>
+    <pin>
+        <name>A5</name>
+        <modes>DIGITAL_INPUT DIGITAL_INPUT_PULLUP DIGITAL_OUTPUT ANALOG_INPUT</modes>
+    </pin>
+</board>

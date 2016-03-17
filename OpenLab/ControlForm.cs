@@ -1,26 +1,322 @@
-﻿using System;
-using System.IO;
-using System.Linq;
-using System.Drawing;
-using System.IO.Ports;
-using System.Xml.Linq;
-using System.Threading;
-using System.Reflection;
-using System.Diagnostics;
-using System.Windows.Forms;
-using System.ComponentModel;
-using System.Collections.Generic;
-using OpenLab.Lib;
+﻿using OpenLab.Lib;
 using OpenLab.Properties;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Drawing;
+using System.IO;
+using System.IO.Ports;
+using System.Linq;
+using System.Reflection;
+using System.Threading;
+using System.Windows.Forms;
+using System.Xml.Linq;
 
 namespace OpenLab
 {
     public partial class ControlForm : Form
     {
-        public List<IControlPlugin> ControlPlugins = new List<IControlPlugin>();
-        public List<ILoggingPlugin> LoggingPlugins = new List<ILoggingPlugin>();
+        public override string Text
+        {
+            set
+            {
+                base.Text = value;
+                FormLabelTextBox.Text = value;
+            }
+        }
+        public ICollection<IControlPlugin> ControlPlugins = new List<IControlPlugin>();
+        public ICollection<ILoggingPlugin> LoggingPlugins = new List<ILoggingPlugin>();
+        public ICollection<Board> Boards = new List<Board>();
+        public Board Board
+        {
+            get
+            {
+                return Boards.First(b => b.Name == SetBoardComboBox.Text);
+            }
+            set
+            {
+                SetBoardComboBox.Text = value.Name;
+            }
+        }
+
+        public ControlForm()
+        {
+            Load += new EventHandler(ControlForm_Load);
+            FormClosing += new FormClosingEventHandler(ControlForm_FormClosing);
+            Resize += new EventHandler(ControlForm_Resize);
+        }
+
+        public void SerialWrite(string Message)
+        {
+            try
+            {
+                SerialPort.WriteLine(Message);
+            }
+            catch
+            {
+                ShowError($"Serial port {SerialPort.PortName} disconnected.");
+            }
+        }
+
+        private DialogResult ShowError(string Message)
+        {
+            return MessageBox.Show(Message, "OpenLab", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+
+        private DialogResult ShowConfirmation(string Message)
+        {
+            return MessageBox.Show(Message, "OpenLab", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+        }
+
+        public void LoadPlugins()
+        {
+            foreach (var dllPath in Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory, "*.dll"))
+            {
+                try
+                {
+                    foreach (var type in Assembly.Load(AssemblyName.GetAssemblyName(dllPath)).GetTypes())
+                    {
+                        if (type.GetInterface(typeof(IControlPlugin).FullName) != null)
+                        {
+                            ControlPlugins.Add((IControlPlugin)Activator.CreateInstance(type));
+                        }
+                        else if (type.GetInterface(typeof(ILoggingPlugin).FullName) != null)
+                        {
+                            LoggingPlugins.Add((ILoggingPlugin)Activator.CreateInstance(type));
+                        }
+                    }
+                }
+                catch
+                {
+                    throw new Exception(string.Format("Error loading plugin {0}.", dllPath));
+                }
+            }
+        }
+
+        public void LoadBoards()
+        {
+            foreach (var boardPath in Directory.GetFiles(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Boards"), "*.brd"))
+            {
+                try
+                {
+                    Boards.Add(Board.FromConfig(XElement.Load(boardPath), "http://www.xphysics.net/OpenLab/Board"));
+                }
+                catch (Exception Ex)
+                {
+                    ShowError(Ex.Message);
+                    throw new Exception(string.Format("Error loading board {0}.", boardPath));
+                }
+            }
+
+            SetBoardComboBox.Items.AddRange(Boards.Select(b => b.Name).ToArray());
+        }
+
+        private void OpenConfig(string FilePath)
+        {
+            try
+            {
+                FromConfig(XElement.Load(FilePath), "http://www.xphysics.net/OpenLab/Config");
+                Editing = false;
+                SaveConfigDialog.FileName = FilePath;
+            }
+            catch
+            {
+                ShowError($"Error opening config file {FilePath}.");
+            }
+        }
+
+        public void FromConfig(XElement Config, XNamespace Ns)
+        {
+            var configVersion = Convert.ToInt32(Config.Element(Ns + "version").Value.Split('.')[0]);
+            var boardName = Config.Element(Ns + "board").Value;
+
+            if (configVersion != GetType().Assembly.GetName().Version.Major)
+            {
+                ShowError($"This config requires OpenLab v{configVersion}.");
+                return;
+            }
+
+            if (!Boards.Any(b => b.Name == boardName))
+            {
+                ShowError($"This config requires board {boardName}.");
+                return;
+            }
+
+            foreach (var controlConfig in Config.Descendants(Ns + "control"))
+            {
+                var controlType = controlConfig.Element(Ns + "type").Value;
+                var controlVersion = Convert.ToInt32(controlConfig.Element(Ns + "version").Value.Split('.')[0]);
+                var controlPlugin = ControlPlugins.FirstOrDefault(x => x.GetType().Assembly.GetName().Name == controlType);
+
+                if (controlVersion != controlPlugin?.GetType().Assembly.GetName().Version.Major)
+                {
+                    ShowError($"This config requires plugin {controlType} v{controlVersion}.");
+                    return;
+                }
+            }
+
+            Text = Config.Element(Ns + "label").Value;
+            Width = Convert.ToInt32(Config.Element(Ns + "width").Value);
+            Height = Convert.ToInt32(Config.Element(Ns + "height").Value);
+            Board = Boards.First(b => b.Name == boardName);
+
+            foreach (var groupConfig in Config.Descendants(Ns + "group"))
+            {
+                Controls.Add(Group.FromConfig(ControlPlugins, Board, LoggingEnabled, groupConfig, Ns));
+            }
+        }
+
+        private void SaveConfig(string FileName)
+        {
+            if (Controls.OfType<Group>().Any(g => g.Controls.OfType<Lib.Control>().Any(c => string.IsNullOrWhiteSpace(c.Pin))))
+            {
+                ShowError("One or more controls are not assigned pins.");
+                return;
+            }
+
+            try
+            {
+                ToConfig("http://www.xphysics.net/OpenLab/Config").Save(FileName);
+                Editing = false;
+            }
+            catch
+            {
+                ShowError($"Error saving config file {FileName}.");
+            }
+        }
+
+        public XElement ToConfig(XNamespace Ns)
+        {
+            var config = new XElement(Ns + "config",
+                new XElement(Ns + "version", GetType().Assembly.GetName().Version),
+                new XElement(Ns + "label", Text),
+                new XElement(Ns + "width", Width),
+                new XElement(Ns + "height", Height),
+                new XElement(Ns + "board", Board.Name));
+
+            foreach (var group in Controls.OfType<Group>())
+            {
+                config.Add(group.ToConfig(Ns));
+            }
+
+            return config;
+        }
+
         private SerialPort SerialPort = new SerialPort();
-        private int UpdateInterval;
+        private int UpdateInterval
+        {
+            get
+            {
+                return Convert.ToInt32(UpdateIntervalTextBox.Text);
+            }
+            set
+            {
+                UpdateIntervalTextBox.Text = value.ToString();
+            }
+        }
+        private bool LoggingEnabled
+        {
+            get
+            {
+                return LoggingMenuItem.Enabled;
+            }
+        }
+        private bool LoggingFileSet
+        {
+            get
+            {
+                return !string.IsNullOrWhiteSpace(SaveLogDialog.FileName);
+            }
+        }
+        private bool ConfigFileSet
+        {
+            get
+            {
+                return !string.IsNullOrWhiteSpace(SaveConfigDialog.FileName);
+            }
+        }
+        private ILoggingPlugin LoggingPlugin
+        {
+            get
+            {
+                return LoggingPlugins.First(p => p.Extension == Path.GetExtension(SaveLogDialog.FileName));
+            }
+        }
+        private bool Editing
+        {
+            get
+            {
+                return !EditConfigMenuItem.Enabled;
+            }
+            set
+            {
+                EditConfigMenuItem.Enabled = !value;
+                SaveConfigAsMenuItem.Enabled = value;
+                SaveConfigMenuItem.Enabled = value && ConfigFileSet;
+                ConnectMenuItem.Enabled = !value;
+                ContextMenuStrip.Enabled = value;
+
+                foreach (var group in Controls.OfType<Group>())
+                {
+                    group.Editing = value;
+                }
+
+                if (value)
+                {
+                    FormBorderStyle = FormBorderStyle.Sizable;
+                    SaveConfigMenuItem.Enabled = !string.IsNullOrWhiteSpace(SaveConfigDialog.FileName);
+                }
+                else
+                {
+                    FormBorderStyle = FormBorderStyle.FixedSingle;
+                    SaveConfigAsMenuItem.Enabled = false;
+                }
+            }
+        }
+        private bool Connected
+        {
+            set
+            {
+                NewConfigMenuItem.Enabled = !value;
+                OpenConfigMenuItem.Enabled = !value;
+                EditConfigMenuItem.Enabled = !value;
+                ConnectMenuItem.Enabled = !value;
+                DisconnectMenuItem.Enabled = value;
+                SerialSettingsEnabled = !value;
+                SaveLogAsMenuItem.Enabled = !value;
+                ControlsEnabled = value;
+            }
+        }
+        private bool SerialSettingsEnabled
+        {
+            set
+            {
+                PortNameMenuItem.Enabled = value;
+                BaudRateMenuItem.Enabled = value;
+                ParityMenuItem.Enabled = value;
+                DataBitsMenuItem.Enabled = value;
+                StopBitsMenuItem.Enabled = value;
+                ReadTimeoutMenuItem.Enabled = value;
+                WriteTimeoutMenuItem.Enabled = value;
+                UpdateIntervalMenuItem.Enabled = value;
+            }
+        }
+        private bool ControlsEnabled
+        {
+            set
+            {
+                foreach (var group in Controls.OfType<Group>())
+                {
+                    group.Enabled = value;
+
+                    foreach (var control in group.Controls.OfType<Lib.Control>())
+                    {
+                        control.Enabled = value;
+                    }
+                }
+            }
+        }
         private OpenFileDialog OpenConfigDialog = new OpenFileDialog();
         private SaveFileDialog SaveConfigDialog = new SaveFileDialog(), SaveLogDialog = new SaveFileDialog();
         private BackgroundWorker UpdateBackgroundWorker = new BackgroundWorker();
@@ -61,181 +357,48 @@ namespace OpenLab
 
         private ToolStripMenuItem FormLabelMenuItem = new ToolStripMenuItem("Form Label");
         private ToolStripTextBox FormLabelTextBox = new ToolStripTextBox("Form Label");
+        private ToolStripMenuItem SetBoardMenuItem = new ToolStripMenuItem("Set Board");
+        private ToolStripComboBox SetBoardComboBox = new ToolStripComboBox("Set Board");
         private ToolStripMenuItem AddGroupMenuItem = new ToolStripMenuItem("Add Group");
 
-        public ControlForm()
+        private bool ResetForm()
         {
-            Load += new EventHandler(ControlForm_Load);
-            FormClosing += new FormClosingEventHandler(ControlForm_FormClosing);
-        }
-
-        public void SerialWrite(string Message)
-        {
-            try
+            if (!EditConfigMenuItem.Enabled)
             {
-                SerialPort.WriteLine(Message);
-            }
-            catch
-            {
-                ShowError("Serial port {0} disconnected.", SerialPort.PortName);
-            }
-        }
-
-        private DialogResult ShowError(string Format, params object[] Args)
-        {
-            return MessageBox.Show(string.Format(Format, Args), GetType().Assembly.GetName().Name, MessageBoxButtons.OK, MessageBoxIcon.Error);
-        }
-
-        private DialogResult ShowConfirmation(string Format, params object[] Args)
-        {
-            return MessageBox.Show(string.Format(Format, Args), GetType().Assembly.GetName().Name, MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
-        }
-
-        public void LoadPlugins()
-        {
-            foreach (var dllPath in Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory, "*.dll"))
-            {
-                try
+                if (ShowConfirmation("You have unsaved changes.\nDo you want to discard them?") == DialogResult.No)
                 {
-                    foreach (var type in Assembly.Load(AssemblyName.GetAssemblyName(dllPath)).GetTypes())
-                    {
-                        if (type.GetInterface(typeof(IControlPlugin).FullName) != null)
-                        {
-                            ControlPlugins.Add((IControlPlugin)Activator.CreateInstance(type));
-                        }
-                        else if (type.GetInterface(typeof(ILoggingPlugin).FullName) != null)
-                        {
-                            LoggingPlugins.Add((ILoggingPlugin)Activator.CreateInstance(type));
-                        }
-                    }
-                }
-                catch
-                {
-                    throw new Exception(string.Format("Error loading plugin {0}.", dllPath));
-                }
-            }
-        }
-
-        private void OpenConfig(string FileName)
-        {
-            try
-            {
-                NewFileMenuItem_Click(null, null);
-                FromConfig(XElement.Load(FileName));
-                DisableEdit();
-                SaveConfigDialog.FileName = FileName;
-            }
-            catch
-            {
-                ShowError("Error opening config file {0}.", FileName);
-            }
-        }
-
-        public void FromConfig(XElement Config)
-        {
-            var configType = Config.Element("type").Value;
-            var configVersion = Convert.ToInt32(Config.Element("version").Value.Split('.')[0]);
-
-            if (configType != GetType().Assembly.GetName().Name || configVersion != GetType().Assembly.GetName().Version.Major)
-            {
-                ShowError("This config requires {0} (v{1})", configType, configVersion);
-                return;
-            }
-
-            foreach (var controlConfig in Config.Descendants("control"))
-            {
-                var controlType = controlConfig.Element("type").Value;
-                var controlVersion = Convert.ToInt32(controlConfig.Element("version").Value.Split('.')[0]);
-                var controlPlugin = ControlPlugins.FirstOrDefault(x => x.GetType().Assembly.GetName().Name == controlType);
-
-                if (controlVersion != controlPlugin?.GetType().Assembly.GetName().Version.Major)
-                {
-                    ShowError("This config requires plugin {0} (v{1}).", controlType, controlVersion);
-                    return;
+                    return false;
                 }
             }
 
-            Text = Config.Element("label").Value;
-            Width = Convert.ToInt32(Config.Element("width").Value);
-            Height = Convert.ToInt32(Config.Element("height").Value);
-
-            foreach (var groupConfig in Config.Descendants("group"))
-            {
-                Controls.Add(Group.FromConfig(ControlPlugins, groupConfig, LoggingPlugins.Any()));
-            }
-        }
-
-        private void SaveConfig(string FileName)
-        {
-            try
-            {
-                GetConfig().Save(FileName);
-                DisableEdit();
-            }
-            catch
-            {
-                ShowError("Error saving config file {0}.", FileName);
-            }
-        }
-
-        public XElement GetConfig()
-        {
-            var config =
-                new XElement("config",
-                    new XElement("type", GetType().Assembly.GetName().Name),
-                    new XElement("version", GetType().Assembly.GetName().Version.ToString()),
-                    new XElement("label", Text),
-                    new XElement("width", Width),
-                    new XElement("height", Height)
-                );
-
             foreach (var group in Controls.OfType<Group>())
             {
-                config.Add(group.GetConfig());
+                Controls.Remove(group);
             }
 
-            return config;
+            Text = GetType().Assembly.GetName().Name;
+            Width = 800;
+            Height = 600;
+            SaveConfigDialog.FileName = null;
+            Editing = false;
+
+            return true;
         }
 
-        private void EnableEdit()
+        private void SaveFileAs()
         {
-            FormBorderStyle = FormBorderStyle.Sizable;
-            OpenConfigMenuItem.Enabled = false;
-            EditConfigMenuItem.Enabled = false;
-            SaveConfigAsMenuItem.Enabled = true;
-            SaveConfigMenuItem.Enabled = !string.IsNullOrWhiteSpace(SaveConfigDialog.FileName);
-            ConnectMenuItem.Enabled = false;
-            ContextMenuStrip.Enabled = true;
-
-            foreach (var group in Controls.OfType<Group>())
+            if (SaveConfigDialog.ShowDialog() == DialogResult.OK)
             {
-                group.EnableEdit();
-            }
-        }
-
-        private void DisableEdit()
-        {
-            FormBorderStyle = FormBorderStyle.FixedSingle;
-            OpenConfigMenuItem.Enabled = true;
-            EditConfigMenuItem.Enabled = true;
-            SaveConfigMenuItem.Enabled = false;
-            SaveConfigAsMenuItem.Enabled = false;
-            ConnectMenuItem.Enabled = true;
-            ContextMenuStrip.Enabled = false;
-
-            foreach (var group in Controls.OfType<Group>())
-            {
-                group.DisableEdit();
+                SaveConfig(SaveConfigDialog.FileName);
             }
         }
 
         private void UpdateBackgroundWorker_DoWork(object Sender, DoWorkEventArgs DoWorkEventArgs)
         {
             int sleep;
-            var controls = new List<OpenLab.Lib.Control>();
+            var controls = new List<Lib.Control>();
             var values = new List<string>();
             var stopwatch = new Stopwatch();
-            var delegates = new HashSet<Delegate>();
 
             try
             {
@@ -243,43 +406,34 @@ namespace OpenLab
             }
             catch
             {
-                ShowError("Error opening serial port {0}.", SerialPort.PortName);
+                ShowError($"Error opening serial port {SerialPort.PortName}.");
                 return;
             }
 
-            if (!string.IsNullOrWhiteSpace(SaveLogDialog.FileName))
+            if (LoggingFileSet)
             {
                 var fields = new List<string>();
 
                 fields.Add("Time");
-
-                foreach (var group in Controls.OfType<Group>())
-                {
-                    foreach (var control in group.Controls.OfType<OpenLab.Lib.Control>())
-                    {
-                        if (control.Log)
-                        {
-                            fields.Add(control.Text);
-                        }
-                    }
-                }
+                fields.AddRange(Controls.OfType<Group>().SelectMany(g => g.Controls.OfType<Lib.Control>().Select(c => c.Text.Get())));
 
                 try
                 {
-                    LoggingPlugins.First(x => x.Extension == Path.GetExtension(SaveLogDialog.FileName)).Open(SaveLogDialog.FileName, fields);
+                    LoggingPlugins.First(x => x.Extension == Path.GetExtension(SaveLogDialog.FileName))
+                        .Open(SaveLogDialog.FileName, fields);
                 }
                 catch
                 {
-                    ShowError("Error opening log file {0}.", SaveLogDialog.FileName);
+                    ShowError($"Error opening log file {SaveLogDialog.FileName}.");
                     return;
                 }
             }
 
             foreach (var group in Controls.OfType<Group>())
             {
-                foreach (var control in group.Controls.OfType<OpenLab.Lib.Control>())
+                foreach (var control in group.Controls.OfType<Lib.Control>())
                 {
-                    control.SetSerialPort(SerialPort);
+                    control.Initialize(SerialPort);
                     controls.Add(control);
                 }
             }
@@ -292,34 +446,33 @@ namespace OpenLab
 
                 foreach (var control in controls)
                 {
-                    var value = default(string);
-
                     try
                     {
-                        value = control.GetValue();
+                        var value = control.Value.Get();
+
                         BeginInvoke(control.SetValueDelagate, value);
+
+                        if (control.Log)
+                        {
+                            values.Add(value.Trim(' ', '\r', '\n'));
+                        }
                     }
                     catch
                     {
-                        ShowError("Serial port {0} disconnected", SerialPort.PortName);
+                        ShowError($"Serial port {SerialPort.PortName} disconnected.");
                         return;
-                    }
-
-                    if (control.Log)
-                    {
-                        values.Add(value.TrimEnd('\r', '\n'));
                     }
                 }
 
-                if (!string.IsNullOrWhiteSpace(SaveLogDialog.FileName))
+                if (LoggingFileSet)
                 {
                     try
                     {
-                        LoggingPlugins.First(x => x.Extension == Path.GetExtension(SaveLogDialog.FileName)).Write(values);
+                        LoggingPlugin.Write(values);
                     }
                     catch
                     {
-                        ShowError("Error writing log file {0}.", SaveLogDialog.FileName);
+                        ShowError($"Error writing log file {SaveLogDialog.FileName}.");
                         return;
                     }
                 }
@@ -338,28 +491,21 @@ namespace OpenLab
         {
             SerialPort.Close();
 
-            if (!string.IsNullOrWhiteSpace(SaveLogDialog.FileName))
+            if (LoggingFileSet)
             {
                 try
                 {
-                    LoggingPlugins.First(x => x.Extension == Path.GetExtension(SaveLogDialog.FileName)).Close();
+                    LoggingPlugin.Close();
                 }
                 catch
                 {
-                    ShowError("Error writing log to {0}.", SaveLogDialog.FileName);
+                    ShowError($"Error writing log to {SaveLogDialog.FileName}.");
                 }
 
                 SaveLogDialog.FileName = null;
             }
 
-            NewConfigMenuItem.Enabled = true;
-            OpenConfigMenuItem.Enabled = true;
-            EditConfigMenuItem.Enabled = true;
-            ConnectMenuItem.Enabled = true;
-            DisconnectMenuItem.Enabled = false;
-            SerialSettingsEnabled(true);
-            SaveLogAsMenuItem.Enabled = true;
-            ControlsEnabled(false);
+            Connected = false;
         }
 
         private void ControlForm_Load(object Sender, EventArgs EventArgs)
@@ -378,7 +524,7 @@ namespace OpenLab
             OpenConfigMenuItem.Click += new EventHandler(OpenFileMenuItem_Click);
             EditConfigMenuItem.Click += new EventHandler(EditFileMenuItem_Click);
             SaveConfigMenuItem.Click += new EventHandler(SaveFileMenuItem_Click);
-            SaveConfigAsMenuItem.Click += new EventHandler(SaveConfigAsMenuItem_Click);
+            SaveConfigAsMenuItem.Click += new EventHandler(SaveFileAsMenuItem_Click);
             QuitMenuItem.Click += new EventHandler(QuitMenuItem_Click);
 
             ConnectMenuItem.Click += new EventHandler(ConnectMenuItem_Click);
@@ -444,14 +590,16 @@ namespace OpenLab
             ContextMenuStrip.Items.AddRange(new ToolStripItem[]
             {
                 FormLabelMenuItem,
+                SetBoardMenuItem,
                 AddGroupMenuItem
             });
 
             FormLabelMenuItem.DropDownItems.Add(FormLabelTextBox);
             FormLabelTextBox.TextChanged += new EventHandler(FormLabelTextBox_TextChanged);
+            SetBoardMenuItem.DropDownItems.Add(SetBoardComboBox);
             AddGroupMenuItem.Click += new EventHandler(AddGroupMenuItem_Click);
 
-            OpenConfigDialog.Filter = string.Format("{0} (*{1})|*{1}", GetType().Assembly.GetName().Name, ".olc");
+            OpenConfigDialog.Filter = "OpenLab (*.olc)|*.olc";
             SaveConfigDialog.Filter = OpenConfigDialog.Filter;
 
             SaveConfigMenuItem.Enabled = false;
@@ -479,11 +627,35 @@ namespace OpenLab
                 ShowError(Ex.Message);
             }
 
-            SaveLogDialog.Filter = string.Join("|", LoggingPlugins.Select(x => string.Format("{0} (*{1})|*{1}", x.GetType().Assembly.GetName().Name, x.Extension)));
+            if (!ControlPlugins.Any())
+            {
+                ShowError("No control plugins found.");
+                return;
+            }
+
+            try
+            {
+                LoadBoards();
+            }
+            catch (Exception Ex)
+            {
+                ShowError(Ex.Message);
+            }
+
+            if (!Boards.Any())
+            {
+                ShowError("No board configs found.");
+                return;
+            }
+
+            SaveLogDialog.Filter = string.Join("|", LoggingPlugins.Select(
+                x => $"{x.GetType().Assembly.GetName().Name} (*{x.Extension})|*{x.Extension}"));
             LoggingMenuItem.Enabled = LoggingPlugins.Any();
+            Board = Boards.First();
 
             UpdateBackgroundWorker.DoWork += new DoWorkEventHandler(UpdateBackgroundWorker_DoWork);
-            UpdateBackgroundWorker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(UpdateBackgroundWorker_RunWorkerCompleted);
+            UpdateBackgroundWorker.RunWorkerCompleted +=
+                new RunWorkerCompletedEventHandler(UpdateBackgroundWorker_RunWorkerCompleted);
             UpdateBackgroundWorker.WorkerSupportsCancellation = true;
 
             if (Environment.GetCommandLineArgs().Length > 1)
@@ -529,46 +701,37 @@ namespace OpenLab
             Settings.Default.Save();
         }
 
+        private void ControlForm_Resize(object Sender, EventArgs EventArgs)
+        {
+            Size = Grid.NearestNode(Size);
+        }
+
         private void NewFileMenuItem_Click(object Sender, EventArgs EventArgs)
         {
-            if (!EditConfigMenuItem.Enabled)
-            {
-                if (ShowConfirmation("You have unsaved changes.\nDo you want to discard them?") == DialogResult.No)
-                {
-                    return;
-                }
-            }
-
-            foreach (var group in Controls.OfType<Group>())
-            {
-                Controls.Remove(group);
-            }
-
-            Text = GetType().Assembly.GetName().Name;
-            Width = 800;
-            Height = 600;
-            SaveConfigDialog.FileName = null;
-            DisableEdit();
+            ResetForm();
         }
 
         private void OpenFileMenuItem_Click(object Sender, EventArgs EventArgs)
         {
             if (OpenConfigDialog.ShowDialog() == DialogResult.OK)
             {
-                OpenConfig(OpenConfigDialog.FileName);
+                if (ResetForm())
+                {
+                    OpenConfig(OpenConfigDialog.FileName);
+                }
             }
         }
 
         private void EditFileMenuItem_Click(object Sender, EventArgs EventArgs)
         {
-            EnableEdit();
+            Editing = true;
         }
 
         private void SaveFileMenuItem_Click(object Sender, EventArgs EventArgs)
         {
-            if (string.IsNullOrWhiteSpace(OpenConfigDialog.FileName))
+            if (!ConfigFileSet)
             {
-                SaveConfigAsMenuItem_Click(null, null);
+                SaveFileAs();
             }
             else
             {
@@ -576,12 +739,9 @@ namespace OpenLab
             }
         }
 
-        private void SaveConfigAsMenuItem_Click(object Sender, EventArgs EventArgs)
+        private void SaveFileAsMenuItem_Click(object Sender, EventArgs EventArgs)
         {
-            if (SaveConfigDialog.ShowDialog() == DialogResult.OK)
-            {
-                SaveConfig(SaveConfigDialog.FileName);
-            }
+            SaveFileAs();
         }
 
         private void QuitMenuItem_Click(object Sender, EventArgs EventArgs)
@@ -629,15 +789,7 @@ namespace OpenLab
 
         private void ConnectMenuItem_Click(object Sender, EventArgs EventArgs)
         {
-            NewConfigMenuItem.Enabled = false;
-            OpenConfigMenuItem.Enabled = false;
-            EditConfigMenuItem.Enabled = false;
-            ConnectMenuItem.Enabled = false;
-            DisconnectMenuItem.Enabled = true;
-            SerialSettingsEnabled(false);
-            SaveLogAsMenuItem.Enabled = false;
-            ControlsEnabled(true);
-
+            Connected = true;
             UpdateBackgroundWorker.RunWorkerAsync();
         }
 
@@ -728,53 +880,22 @@ namespace OpenLab
 
         private void ContextMenuStrip_Opening(object Sender, CancelEventArgs CancelEventArgs)
         {
-            if (!ContextMenuStrip.Enabled)
-            {
-                CancelEventArgs.Cancel = true;
-                return;
-            }
-
+            CancelEventArgs.Cancel = !ContextMenuStrip.Enabled;
             ContextMenuLocation = PointToClient(Cursor.Position);
-            FormLabelTextBox.Text = Text;
         }
 
         private void FormLabelTextBox_TextChanged(object Sender, EventArgs EventArgs)
         {
-            Text = FormLabelTextBox.Text;
+            base.Text = FormLabelTextBox.Text;
         }
 
         private void AddGroupMenuItem_Click(object Sender, EventArgs EventArgs)
         {
-            var group = Group.FromLocation(ControlPlugins, ContextMenuLocation);
+            var group = Group.FromLocation(ControlPlugins, Board, LoggingEnabled, ContextMenuLocation);
 
             Controls.Add(group);
             group.BringToFront();
-            group.EnableEdit();
-        }
-
-        private void SerialSettingsEnabled(bool Enabled)
-        {
-            PortNameMenuItem.Enabled = Enabled;
-            BaudRateMenuItem.Enabled = Enabled;
-            ParityMenuItem.Enabled = Enabled;
-            DataBitsMenuItem.Enabled = Enabled;
-            StopBitsMenuItem.Enabled = Enabled;
-            ReadTimeoutMenuItem.Enabled = Enabled;
-            WriteTimeoutMenuItem.Enabled = Enabled;
-            UpdateIntervalMenuItem.Enabled = Enabled;
-        }
-
-        private void ControlsEnabled(bool Enabled)
-        {
-            foreach (var group in Controls.OfType<Group>())
-            {
-                group.Enabled = Enabled;
-
-                foreach (var control in group.Controls.OfType<OpenLab.Lib.Control>())
-                {
-                    control.Enabled = Enabled;
-                }
-            }
+            group.Editing = true;
         }
     }
 }

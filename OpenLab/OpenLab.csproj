@@ -80,6 +80,9 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
+    <None Include="Samples\config.olc">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -106,6 +109,30 @@
       <Project>{1556b3bf-9131-42d2-b153-9b214c931af1}</Project>
       <Name>OpenLab.Lib</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Plugins\Controls\Meter\Meter.csproj">
+      <Project>{b3952f6a-12dd-432e-9d8e-69a579cde528}</Project>
+      <Name>Meter</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Plugins\Controls\Spinner\Spinner.csproj">
+      <Project>{e355904d-b5fb-45c3-8752-658ea93f57e9}</Project>
+      <Name>Spinner</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Plugins\Controls\Toggle\Toggle.csproj">
+      <Project>{3bd05b8a-1315-4ab9-8a6f-44cd7fcdf5c5}</Project>
+      <Name>Toggle</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Plugins\Logging\CSV\CSV.csproj">
+      <Project>{7b66ff00-3eb1-4c3c-abac-fdf016689678}</Project>
+      <Name>CSV</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Boards\arduino_uno.brd">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Sketches\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using System.Collections.Generic;
 using OpenLab.Lib;
+using System;
 
 namespace OpenLab.Plugins.Logging
 {
@@ -35,7 +36,7 @@ namespace OpenLab.Plugins.Logging
 
         private void WriteLine(IEnumerable<string> Values)
         {
-            LogFile.Write(string.Format("{0}\n", string.Join(",", Values)));
+            LogFile.Write(string.Format("{0}{1}", string.Join(",", Values), Environment.NewLine));
         }
     }
 }

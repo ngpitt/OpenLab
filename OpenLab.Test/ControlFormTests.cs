@@ -1,10 +1,8 @@
-﻿using System;
-using System.Linq;
-using System.Collections.Generic;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using OpenLab.Lib;
 using OpenLab.Plugins.Controls;
 using OpenLab.Plugins.Logging;
-using OpenLab.Lib;
+using System.Linq;
 
 namespace OpenLab.Test
 {
@@ -37,10 +35,13 @@ namespace OpenLab.Test
             controlForm.Text = "Form";
             controlForm.Width = 100;
             controlForm.Height = 200;
+            controlForm.Board = controlForm.Boards.First();
             controlForm.Controls.Add(GroupTests.GetGroup(controlForm));
 
             // Act
-            controlFormFromConfig.FromConfig(controlForm.GetConfig());
+            controlFormFromConfig.FromConfig(
+                controlForm.ToConfig("http://www.xphysics.net/OpenLab/Config"),
+                "http://www.xphysics.net/OpenLab/Config");
 
             // Assert
             AssertIsCopy(controlForm, controlFormFromConfig);
@@ -51,6 +52,7 @@ namespace OpenLab.Test
             var form = new ControlForm();
 
             form.LoadPlugins();
+            form.LoadBoards();
 
             return form;
         }
@@ -63,6 +65,7 @@ namespace OpenLab.Test
             Assert.AreEqual(ControlForm.Text, ControlFormCopy.Text);
             Assert.AreEqual(ControlForm.Width, ControlFormCopy.Width);
             Assert.AreEqual(ControlForm.Height, ControlFormCopy.Height);
+            Assert.AreEqual(ControlForm.Board.Name, ControlFormCopy.Board.Name);
             Assert.AreEqual(groups.Count(), groupsCopy.Count());
             
             for (var i = 0; i < groups.Count(); i++)

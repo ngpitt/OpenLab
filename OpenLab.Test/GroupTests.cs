@@ -1,9 +1,7 @@
-﻿using System;
-using System.Linq;
-using System.Drawing;
-using System.Collections.Generic;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using OpenLab.Lib;
+using System.Drawing;
+using System.Linq;
 
 namespace OpenLab.Test
 {
@@ -14,11 +12,13 @@ namespace OpenLab.Test
         public void FromLocation()
         {
             // Arrange
-            var controlPlugins = ControlFormTests.GetControlForm().ControlPlugins;
-            var location = new Point(1, 2);
+            var controlForm = ControlFormTests.GetControlForm();
+            var controlPlugins = controlForm.ControlPlugins;
+            var board = controlForm.Boards.First(); 
+            var location = new Point(10, 20);
 
             // Act
-            var group = Group.FromLocation(controlPlugins, location);
+            var group = Group.FromLocation(controlPlugins, board, false, location);
 
             // Assert
             Assert.AreSame(controlPlugins, group.ControlPlugins);
@@ -29,10 +29,15 @@ namespace OpenLab.Test
         public void FromConfig()
         {
             // Arrange
-            var group = GetGroup(ControlFormTests.GetControlForm());
+            var controlForm = ControlFormTests.GetControlForm();
+            var controlPlugins = controlForm.ControlPlugins;
+            var board = controlForm.Boards.First();
+            var group = GetGroup(controlForm);
 
             // Act
-            var groupCopy = Group.FromConfig(group.ControlPlugins, group.GetConfig(), false);
+            var groupCopy = Group.FromConfig(controlPlugins, board, false,
+                group.ToConfig("http://www.xphysics.net/OpenLab/Config"),
+                "http://www.xphysics.net/OpenLab/Config");
 
             // Assert
             AssertIsCopy(group, groupCopy);
@@ -53,7 +58,9 @@ namespace OpenLab.Test
 
         public static Group GetGroup(ControlForm ControlForm)
         {
-            var group = Group.FromLocation(ControlForm.ControlPlugins, new Point(1, 2));
+            var controlPlugins = ControlForm.ControlPlugins;
+            var board = ControlForm.Boards.First();
+            var group = Group.FromLocation(controlPlugins, board, false, new Point(10, 20));
             var control = ControlTests.GetControl(ControlForm);
 
             group.Text = "Group";
