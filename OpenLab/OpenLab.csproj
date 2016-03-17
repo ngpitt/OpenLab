@@ -83,6 +83,7 @@
     <None Include="Samples\config.olc">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="Sketches\arduino_uno\arduino_uno.ino" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -131,9 +132,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Sketches\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>
